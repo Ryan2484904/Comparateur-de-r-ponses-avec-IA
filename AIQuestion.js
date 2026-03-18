@@ -15,7 +15,8 @@ async function envoieQuestion(contenu){
         });
 
         const reponseIA = await reponse.json();
-        console.log("Réponse de l'IA : ", reponseIA.response);
+        console.log("Réponse de l'IA : ", reponseIA);
+        return reponseIA.response;
     }
     catch (error) {
         console.error("Erreur : ", error);
