@@ -12,71 +12,177 @@
       height: 100vh;
     }
 
-  .people-column {
-  background-color: red;
-  width: 80px;
+    .people-column {
+      background-color: red;
+      width: 80px;
 
-  display: flex;
-  flex-direction: column;
-    align-items: center;
-    padding-top: 10px;
-}
-.person-icon {
-width: 50px;
-height: 50px;
-background-color: white;
-border-radius: 50%;
-margin-bottom: 10px;
-}
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 10px;
+    }
 
-.conversations-column {
-  background-color: blue;
-  flex: 1;
+    .person-icon {
+      width: 50px;
+      height: 50px;
+      background-color: white;
+      border-radius: 50%;
+      margin-bottom: 10px;
+    }
 
-  display: flex;
-    flex-direction: column;
-    padding: 10px;
-    box-sizing: border-box;
-    gap: 10px;
-}
-.conversation-item {
-  background-color: lightblue;
+    .conversations-column {
+      background-color: blue;
+      flex: 1;
+
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      box-sizing: border-box;
+      gap: 10px;
+    }
+
+    .conversation-item {
+      background-color: white;
+      height: 70px;
+      border-radius: 12px;
+    }
+
+    .chat-column {
+      background-color: green;
+      flex: 3;
+
+      display: flex;
+      flex-direction: column;
+    }
+
+    .messages-area {
+      background-color: lightgreen;
+      flex: 1;
+    }
+
+    .input-area {
+      background-color: darkgreen;
+      height: 100px;
+    }
+    .conversation-item {
+  background-color: white;
   height: 70px;
   border-radius: 12px;
+
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  box-sizing: border-box;
+  gap: 10px;
 }
-.chat-column {
-  background-color: green;
-  flex: 3;
+
+.conversation-avatar {
+  width: 40px;
+  height: 40px;
+  background-color: gray;
+  border-radius: 50%;
+}
+
+.conversation-text {
+  flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
 }
-.messages-area {
-  background-color: lightgreen;
-  flex: 1;
+
+.conversation-name {
+  font-weight: bold;
+}
+
+.conversation-preview {
+  font-size: 14px;
+  color: gray;
 }
 .input-area {
   background-color: darkgreen;
-    height: 100px;
+  height: 100px;
+
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  box-sizing: border-box;
+  gap: 10px;
+}
+
+.message-input {
+  flex: 1;
+  height: 40px;
+  border-radius: 8px;
+  border: none;
+  padding: 0 10px;
+}
+
+.send-button {
+  height: 40px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 8px;
+  background-color: white;
+  cursor: pointer;
 }
   </style>
 </head>
 
-<body>
+<body>  
   <div class="app">
     <div class="people-column">
-    <div class=" person-icon"> </div>
-    <div class=" person-icon"> </div>
-    <div class=" person-icon"> </div>
-  </div>
-<div class="conversations-column">
-  <div class="conversation-item"></div>
-  <div class="conversation-item"></div>
-  <div class="conversation-item"></div>
-</div>  
-  <div class="chat-column">
-  <div class="messages-area"></div>
-  <div class="input-area"></div>
+      <div class="person-icon"></div>
+      <div class="person-icon"></div>
+      <div class="person-icon"></div>
+    </div>
+<div class="conversations-column"></div>
+    <div class="chat-column">
+      <div class="messages-area"></div>
+     <div class="input-area">
+  <input type="text" class="message-input" placeholder="Type a message..." />
+  <button class="send-button">Send</button>
 </div>
+    </div>
   </div>
+
+  <script>
+  const input = document.querySelector(".message-input");
+  const button = document.querySelector(".send-button");
+  const messagesArea = document.querySelector(".messages-area");
+
+  button.onclick = function () {
+    const text = input.value;
+
+    if (text === "") return;
+
+    const message = document.createElement("div");
+    message.textContent = text;
+
+    message.style.background = "white";
+    message.style.padding = "10px";
+    message.style.margin = "10px";
+    message.style.borderRadius = "10px";
+    message.style.width = "fit-content";
+
+    messagesArea.appendChild(message);
+
+// auto reply
+const reply = document.createElement("div");
+reply.textContent = "yes";
+
+reply.style.background = "white";
+reply.style.padding = "10px";
+reply.style.margin = "10px";
+reply.style.borderRadius = "10px";
+reply.style.width = "fit-content";
+
+setTimeout(() => {
+  messagesArea.appendChild(reply);
+}, 500);
+
+// clear input
+input.value = "";
+  };
+</script>
 </body>
 </html>
