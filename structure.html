@@ -198,17 +198,30 @@ selectedConversation.messages.forEach(msg => {
 function renderConversationList() {
   conversationsColumn.innerHTML = "";
 
-  conversations.forEach(conversation => {
-    const item = document.createElement("div");
-    item.textContent = conversation.title;
+ conversations.forEach(conversation => {
+  const item = document.createElement("div");
+  item.textContent = conversation.title;
 
+  item.style.padding = "15px";
+  item.style.borderRadius = "10px";
+  item.style.cursor = "pointer";
+
+  // selected conversation = darker color
+  if (conversation.id === selectedConversation.id) {
+    item.style.background = "lightgray";
+  } else {
     item.style.background = "white";
-    item.style.padding = "15px";
-    item.style.borderRadius = "10px";
-    item.style.cursor = "pointer";
+  }
 
-    conversationsColumn.appendChild(item);
-  });
+  // click to switch conversation
+  item.onclick = function () {
+    selectedConversation = conversation;
+    renderConversationList();
+    renderMessages();
+  };
+
+  conversationsColumn.appendChild(item);
+});
 }
 renderConversationList();
 button.onclick = function () {
