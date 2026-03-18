@@ -145,44 +145,83 @@
     </div>
   </div>
 
+<<<<<<< HEAD
   <script>
+
+    class Message {
+    constructor(sender, text) {
+      this.sender = sender;
+      this.text = text;
+    }
+  }
+class Conversation {
+  constructor(id, title, messages) {
+    this.id = id;
+    this.title = title;
+    this.messages = messages;
+  }
+}
+
+const currentConversation = new Conversation(1, "General Chat", []);
+console.log(currentConversation);
+  const testMessage = new Message("me", "hello");
+console.log(testMessage);
+
   const input = document.querySelector(".message-input");
   const button = document.querySelector(".send-button");
   const messagesArea = document.querySelector(".messages-area");
+button.onclick = function () {
+  const text = input.value;
 
-  button.onclick = function () {
-    const text = input.value;
+  if (text === "") return;
 
-    if (text === "") return;
+  // 1. create Message object
+  const newMessage = new Message("me", text);
 
-    const message = document.createElement("div");
-    message.textContent = text;
+  // 2. store in conversation
+  currentConversation.messages.push(newMessage);
 
-    message.style.background = "white";
-    message.style.padding = "10px";
-    message.style.margin = "10px";
-    message.style.borderRadius = "10px";
-    message.style.width = "fit-content";
+  console.log(currentConversation.messages);
 
-    messagesArea.appendChild(message);
+  // 3. display it
+  const messageDiv = document.createElement("div");
+  messageDiv.textContent = newMessage.text;
 
-// auto reply
-const reply = document.createElement("div");
-reply.textContent = "yes";
+  messageDiv.style.background = "white";
+  messageDiv.style.padding = "10px";
+  messageDiv.style.margin = "10px";
+  messageDiv.style.borderRadius = "10px";
+  messageDiv.style.width = "fit-content";
 
-reply.style.background = "white";
-reply.style.padding = "10px";
-reply.style.margin = "10px";
-reply.style.borderRadius = "10px";
-reply.style.width = "fit-content";
+  messagesArea.appendChild(messageDiv);
 
-setTimeout(() => {
-  messagesArea.appendChild(reply);
-}, 500);
+  // auto reply
+  const replyMessage = new Message("other", "yes");
 
-// clear input
-input.value = "";
-  };
+  // store reply in conversation
+  currentConversation.messages.push(replyMessage);
+
+  console.log(currentConversation.messages);
+
+  const replyDiv = document.createElement("div");
+  replyDiv.textContent = replyMessage.text;
+
+  replyDiv.style.background = "white";
+  replyDiv.style.padding = "10px";
+  replyDiv.style.margin = "10px";
+  replyDiv.style.borderRadius = "10px";
+  replyDiv.style.width = "fit-content";
+
+  setTimeout(() => {
+    messagesArea.appendChild(replyDiv);
+  }, 500);
+
+  // clear input
+  input.value = "";
+};
 </script>
+=======
+  <script type = "module" src = "Question.js"></script>
+>>>>>>> 8cb865a3d6b4bbec1a1c26e46f0b97cb8dc5fdc9
 </body>
 </html>
