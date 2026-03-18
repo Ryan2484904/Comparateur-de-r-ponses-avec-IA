@@ -145,8 +145,6 @@
     </div>
   </div>
 
-<<<<<<< HEAD
-<<<<<<< HEAD
   <script>
 
     class Message {
@@ -163,69 +161,80 @@ class Conversation {
   }
 }
 
-const currentConversation = new Conversation(1, "General Chat", []);
-console.log(currentConversation);
+const conversations = [
+  new Conversation(1, "Chat 1", []),
+  new Conversation(2, "Chat 2", []),
+  new Conversation(3, "Chat 3", [])
+];
+
+let selectedConversation = conversations[0];
+console.log(conversations);
+console.log(selectedConversation);
   const testMessage = new Message("me", "hello");
 console.log(testMessage);
 
   const input = document.querySelector(".message-input");
   const button = document.querySelector(".send-button");
   const messagesArea = document.querySelector(".messages-area");
+const conversationsColumn = document.querySelector(".conversations-column");
+function renderMessages() {
+  // clear screen
+  messagesArea.innerHTML = "";
+
+  // loop through all messages
+selectedConversation.messages.forEach(msg => {  
+    const messageDiv = document.createElement("div");
+    messageDiv.textContent = msg.text;
+
+    messageDiv.style.background = "white";
+    messageDiv.style.padding = "10px";
+    messageDiv.style.margin = "10px";
+    messageDiv.style.borderRadius = "10px";
+    messageDiv.style.width = "fit-content";
+
+    messagesArea.appendChild(messageDiv);
+  });
+}
+function renderConversationList() {
+  conversationsColumn.innerHTML = "";
+
+  conversations.forEach(conversation => {
+    const item = document.createElement("div");
+    item.textContent = conversation.title;
+
+    item.style.background = "white";
+    item.style.padding = "15px";
+    item.style.borderRadius = "10px";
+    item.style.cursor = "pointer";
+
+    conversationsColumn.appendChild(item);
+  });
+}
+renderConversationList();
 button.onclick = function () {
   const text = input.value;
 
   if (text === "") return;
 
-  // 1. create Message object
+  // create message
   const newMessage = new Message("me", text);
-
-  // 2. store in conversation
-  currentConversation.messages.push(newMessage);
-
-  console.log(currentConversation.messages);
-
-  // 3. display it
-  const messageDiv = document.createElement("div");
-  messageDiv.textContent = newMessage.text;
-
-  messageDiv.style.background = "white";
-  messageDiv.style.padding = "10px";
-  messageDiv.style.margin = "10px";
-  messageDiv.style.borderRadius = "10px";
-  messageDiv.style.width = "fit-content";
-
-  messagesArea.appendChild(messageDiv);
+selectedConversation.messages.push(newMessage);
+console.log(selectedConversation.messages);
+  // render messages
+  renderMessages();
 
   // auto reply
-  const replyMessage = new Message("other", "yes");
-
-  // store reply in conversation
-  currentConversation.messages.push(replyMessage);
-
-  console.log(currentConversation.messages);
-
-  const replyDiv = document.createElement("div");
-  replyDiv.textContent = replyMessage.text;
-
-  replyDiv.style.background = "white";
-  replyDiv.style.padding = "10px";
-  replyDiv.style.margin = "10px";
-  replyDiv.style.borderRadius = "10px";
-  replyDiv.style.width = "fit-content";
+const replyMessage = new Message("other", "yes");
+selectedConversation.messages.push(replyMessage);
+console.log(selectedConversation.messages);
 
   setTimeout(() => {
-    messagesArea.appendChild(replyDiv);
+    renderMessages();
   }, 500);
 
   // clear input
   input.value = "";
 };
 </script>
-=======
-  <script type = "module" src = "Question.js"></script>
->>>>>>> 8cb865a3d6b4bbec1a1c26e46f0b97cb8dc5fdc9
-=======
-  <script type = "module" src = "Question.js"></script>
->>>>>>> 8cb865a3d6b4bbec1a1c26e46f0b97cb8dc5fdc9
 </body>
 </html>
