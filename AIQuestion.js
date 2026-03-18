@@ -1,5 +1,3 @@
-import { contenu } from './Question.js';
-
 let model = "gpt-oss:120b-cloud";
 
 async function envoieQuestion(contenu){
@@ -11,7 +9,8 @@ async function envoieQuestion(contenu){
             },
             body: JSON.stringify({ 
                 model: model,
-                prompt: contenu
+                prompt: contenu,
+                stream: false
              })
         });
 
