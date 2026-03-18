@@ -15,25 +15,68 @@
   .people-column {
   background-color: red;
   width: 80px;
+
+  display: flex;
+  flex-direction: column;
+    align-items: center;
+    padding-top: 10px;
+}
+.person-icon {
+width: 50px;
+height: 50px;
+background-color: white;
+border-radius: 50%;
+margin-bottom: 10px;
 }
 
 .conversations-column {
   background-color: blue;
   flex: 1;
-}
 
+  display: flex;
+    flex-direction: column;
+    padding: 10px;
+    box-sizing: border-box;
+    gap: 10px;
+}
+.conversation-item {
+  background-color: lightblue;
+  height: 70px;
+  border-radius: 12px;
+}
 .chat-column {
   background-color: green;
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+}
+.messages-area {
+  background-color: lightgreen;
   flex: 1;
+}
+.input-area {
+  background-color: darkgreen;
+    height: 100px;
 }
   </style>
 </head>
 
 <body>
   <div class="app">
-    <div class="people-column"></div>
-    <div class="conversations-column"></div>
-    <div class="chat-column"></div>
+    <div class="people-column">
+    <div class=" person-icon"> </div>
+    <div class=" person-icon"> </div>
+    <div class=" person-icon"> </div>
+  </div>
+<div class="conversations-column">
+  <div class="conversation-item"></div>
+  <div class="conversation-item"></div>
+  <div class="conversation-item"></div>
+</div>  
+  <div class="chat-column">
+  <div class="messages-area"></div>
+  <div class="input-area"></div>
+</div>
   </div>
 </body>
 </html>
