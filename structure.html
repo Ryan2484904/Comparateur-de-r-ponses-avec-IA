@@ -145,44 +145,6 @@
     </div>
   </div>
 
-  <script>
-  const input = document.querySelector(".message-input");
-  const button = document.querySelector(".send-button");
-  const messagesArea = document.querySelector(".messages-area");
-
-  button.onclick = function () {
-    const text = input.value;
-
-    if (text === "") return;
-
-    const message = document.createElement("div");
-    message.textContent = text;
-
-    message.style.background = "white";
-    message.style.padding = "10px";
-    message.style.margin = "10px";
-    message.style.borderRadius = "10px";
-    message.style.width = "fit-content";
-
-    messagesArea.appendChild(message);
-
-// auto reply
-const reply = document.createElement("div");
-reply.textContent = "yes";
-
-reply.style.background = "white";
-reply.style.padding = "10px";
-reply.style.margin = "10px";
-reply.style.borderRadius = "10px";
-reply.style.width = "fit-content";
-
-setTimeout(() => {
-  messagesArea.appendChild(reply);
-}, 500);
-
-// clear input
-input.value = "";
-  };
-</script>
+  <script type = "module" src = "Question.js"></script>
 </body>
 </html>
