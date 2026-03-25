@@ -1,16 +1,12 @@
-let model = "gpt-oss:120b-cloud";
-
 async function envoieQuestion(contenu){
     try{
-        const reponse = await fetch('http://localhost:11434/api/generate', {
+        const reponse = await fetch('http://localhost:3000/api/generate', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ 
-                model: model,
-                prompt: contenu,
-                stream: false
+                prompt: contenu
              })
         });
 
