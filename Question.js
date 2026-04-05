@@ -113,7 +113,7 @@ button.addEventListener("click", async() => {
     dateEnvoie = new Date();
     console.log("Question envoyée : ", contenu);
     console.log("Date d'envoi : ", dateEnvoie.toLocaleDateString() + " à " + dateEnvoie.toLocaleTimeString());
-    reply.textContent = await envoieQuestion(contenu);
+    reply.innerHTML = marked.parse(reply.textContent = await envoieQuestion(contenu));
     input.value = "";
 });
 
