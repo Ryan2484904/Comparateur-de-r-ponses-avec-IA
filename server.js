@@ -10,25 +10,28 @@ app.post('/api/generate', async (req, res) => {
     const { prompt } = req.body;
     console.log("Question reçue : ", prompt);
     
-    try{
-        const reponse = await fetch('http://localhost:11434/api/generate', {
+    const models = ["gpt-oss:120b-cloud", "llama3.2", "mistral"];
+    const fetches = models.map(model => 
+        fetch('http://localhost:11434/api/generate', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ 
-                model: "gpt-oss:120b-cloud",
+                model: model,
                 prompt: prompt,
                 stream: false
             })
-        });
+        }).then(response => response.json()).then(data => data.response)
+    );
 
-        const reponseIA = await reponse.json();
-        console.log("Réponse de l'IA : ", reponseIA);
-        res.json(reponseIA);
-    }
-    catch (error) {
+    try {
+        const responses = await Promise.all(fetches);
+        console.log("Réponses des IA : ", responses);
+        res.json({ responses });
+    } catch (error) {
         console.error("Erreur serveur: ", error);
+        res.status(500).json({ error: error.message });
     }
 });
 
