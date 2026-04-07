@@ -86,6 +86,9 @@ button.addEventListener("click", async() => {
 
     if (text === "") return;
 
+    // Add user message to conversation
+    selectedConversation.messages.push(new Message("user", text));
+
     const message = document.createElement("div");
     message.textContent = text;
 
@@ -97,23 +100,20 @@ button.addEventListener("click", async() => {
 
     messagesArea.appendChild(message);
 
-    const reply = document.createElement("div");
+    const responses = await envoieQuestion(text);
+    responses.forEach(response => {
+        // Add AI response to conversation
+        selectedConversation.messages.push(new Message("ai", response));
 
-    reply.style.background = "white";
-    reply.style.padding = "10px";
-    reply.style.margin = "10px";
-    reply.style.borderRadius = "10px";
-    reply.style.width = "fit-content";
-
-    setTimeout(() => {
+        const reply = document.createElement("div");
+        reply.innerHTML = marked.parse(response);
+        reply.style.background = "white";
+        reply.style.padding = "10px";
+        reply.style.margin = "10px";
+        reply.style.borderRadius = "10px";
+        reply.style.width = "fit-content";
         messagesArea.appendChild(reply);
-    }, 500);
-
-    contenu = input.value;
-    dateEnvoie = new Date();
-    console.log("Question envoyée : ", contenu);
-    console.log("Date d'envoi : ", dateEnvoie.toLocaleDateString() + " à " + dateEnvoie.toLocaleTimeString());
-    reply.innerHTML = marked.parse(reply.textContent = await envoieQuestion(contenu));
+    });
     input.value = "";
 });
 
