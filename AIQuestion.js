@@ -7,17 +7,18 @@ async function envoieQuestion(contenu){
             },
             body: JSON.stringify({ 
                 prompt: contenu
-             })
+            })
         });
 
         const reponseIA = await reponse.json();
-        console.log("Réponse de l'IA : ", reponseIA);
-        return reponseIA.response;
+        console.log("Réponse de l'IA :", reponseIA);
+
+        return reponseIA.response || "Aucune réponse reçue.";
     }
     catch (error) {
-        console.error("Erreur : ", error);
+        console.error("Erreur :", error);
+        return "Erreur de connexion au serveur.";
     }
-    
 }
 
 export { envoieQuestion };

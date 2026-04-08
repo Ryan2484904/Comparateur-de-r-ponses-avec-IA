@@ -1,0 +1,27 @@
+{
+  "name": "comparateur-de-r-ponses-avec-ia",
+  "version": "1.0.0",
+  "description": "<img width=\"1662\" height=\"482\" alt=\"Gantt\" src=\"https://github.com/user-attachments/assets/76e58056-cc10-4456-bd8a-c451d61c8415\" />\r <img width=\"850\" height=\"662\" alt=\"UML\" src=\"https://github.com/user-attachments/assets/fdb0ee33-ef46-4d88-9b44-3251ac3aaefd\" />",
+  "main": "AIQuestion.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ryan2484904/Comparateur-de-r-ponses-avec-IA.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Ryan2484904/Comparateur-de-r-ponses-avec-IA/issues"
+  },
+  "homepage": "https://github.com/Ryan2484904/Comparateur-de-r-ponses-avec-IA#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "node-fetch": "^2.7.0"
+  }
+}
