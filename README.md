@@ -4,19 +4,11 @@
 
 **Description du projet**
 
-Comparaison IA est une application mobile innovante qui permet de poser une question — en texte ou à partir d’une image — et d’obtenir des réponses provenant de plusieurs intelligences artificielles simultanément.
+Comparaison IA est un website innovant qui permet de poser une question — en texte ou à partir d’une image — et d’obtenir des réponses provenant de plusieurs intelligences artificielles simultanément.
 
 L’application intègre une IA comparatrice capable d’analyser automatiquement les réponses générées. Elle regroupe les informations similaires, met en évidence les différences, et identifie clairement la source de chaque réponse ainsi que l’intelligence artificielle utilisée.
 
-Ce projet vise à résoudre un problème concret : les IA peuvent fournir des réponses différentes à une même question, ce qui rend difficile pour l’utilisateur de juger leur fiabilité. En centralisant et en comparant ces réponses, l’application permet de :
-
-mieux comprendre un sujet
-
-vérifier l’exactitude des informations
-
-identifier les divergences entre les sources
-
-gagner du temps dans la recherche
+ les IA peuvent fournir des réponses différentes à une même question, ce qui rend difficile pour l’utilisateur de juger leur fiabilité. Le but de l'AI est de centraliser et de comparer ces réponses.
 
 Grâce à une interface simple et intuitive, l’utilisateur peut rapidement analyser plusieurs points de vue et prendre une décision plus éclairée.
 
