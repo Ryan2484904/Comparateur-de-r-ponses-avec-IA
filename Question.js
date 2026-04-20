@@ -31,16 +31,25 @@ const conversationsColumn = document.querySelector(".conversations-column");
 function renderMessages() {
   messagesArea.innerHTML = "";
 
-  selectedConversation.messages.forEach(msg => {
-    const messageDiv = document.createElement("div");
-    messageDiv.textContent = msg.text;
-    messageDiv.className = "p-2 mb-2 rounded bg-light";
-    messageDiv.style.padding = "10px";
-    messageDiv.style.margin = "10px";
-    messageDiv.style.borderRadius = "10px";
-    messageDiv.style.width = "fit-content";
-    messagesArea.appendChild(messageDiv);
-  });
+selectedConversation.messages.forEach(msg => {
+  const messageDiv = document.createElement("div");
+
+  if (msg.sender === "user") {
+    messageDiv.className = "p-2 mb-2 rounded bg-primary text-white align-self-end";
+  } else {
+    messageDiv.className = "p-2 mb-2 rounded bg-light align-self-start";
+  }
+
+  // 👇 ADD THESE HERE
+  messageDiv.style.maxWidth = "60%";
+  messageDiv.style.wordWrap = "break-word";
+  messageDiv.style.marginLeft = msg.sender === "user" ? "auto" : "0";
+  messageDiv.style.marginRight = msg.sender === "user" ? "0" : "auto";
+
+  messageDiv.textContent = msg.text;
+
+  messagesArea.appendChild(messageDiv);
+});
 }
 
 function renderConversationList() {
