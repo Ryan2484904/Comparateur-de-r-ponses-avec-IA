@@ -34,7 +34,7 @@ function renderMessages() {
   selectedConversation.messages.forEach(msg => {
     const messageDiv = document.createElement("div");
     messageDiv.textContent = msg.text;
-    messageDiv.style.background = "white";
+    messageDiv.className = "p-2 mb-2 rounded bg-light";
     messageDiv.style.padding = "10px";
     messageDiv.style.margin = "10px";
     messageDiv.style.borderRadius = "10px";
