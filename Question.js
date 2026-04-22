@@ -1,5 +1,9 @@
 import { envoieQuestion } from "./AIQuestion.js";
 
+if (!localStorage.getItem("userId")) {
+  localStorage.setItem("userId", crypto.randomUUID());
+}
+
 class Message {
   constructor(sender, text) {
     this.sender = sender;
@@ -52,6 +56,32 @@ selectedConversation.messages.forEach(msg => {
 });
 }
 
+async function loadMessages() {
+  try {
+    const userId = localStorage.getItem("userId");
+
+    const res = await fetch(`http://localhost:3000/api/messages/${userId}`);
+
+    if (!res.ok) {
+      throw new Error("Server error: " + res.status);
+    }
+
+    const data = await res.json();
+
+    selectedConversation.messages = [];
+
+    data.forEach(msg => {
+      selectedConversation.messages.push(new Message("user", msg.prompt));
+      selectedConversation.messages.push(new Message("ai", msg.response));
+    });
+
+    renderMessages();
+
+  } catch (error) {
+    console.error("Erreur loadMessages:", error);
+  }
+}
+
 function renderConversationList() {
   conversationsColumn.innerHTML = "";
 
@@ -90,3 +120,5 @@ button.addEventListener("click", async () => {
 
   input.value = "";
 });
+
+loadMessages();
