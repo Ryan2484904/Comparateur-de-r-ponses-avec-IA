@@ -1,5 +1,9 @@
 
 async function envoieQuestion(contenu){
+    if (!localStorage.getItem("userId")) {
+        localStorage.setItem("userId", crypto.randomUUID());
+    }
+
     try{
         const reponse = await fetch('http://localhost:3000/api/generate', {
             method: 'POST',
@@ -7,7 +11,8 @@ async function envoieQuestion(contenu){
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ 
-                prompt: contenu
+                prompt: contenu,
+                userId: localStorage.getItem("userId")
             })
         });
 
