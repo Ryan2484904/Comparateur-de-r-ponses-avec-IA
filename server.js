@@ -1,8 +1,26 @@
-const express = require('express');
+onst express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
+require('dotenv').config();
+const mongoose = require('mongoose');
 
-const API_KEY = "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";
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB Atlas connecté"))
+  .catch(err => console.error("Erreur MongoDB :", err));
+
+const messageSchema = new mongoose.Schema({
+  userId: String,
+  prompt: String,
+  response: String,
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+const Message = mongoose.model('Message', messageSchema);
+
+const API_KEY = process.env.OPENROUTER_API_KEY;
 
 const app = express();
 app.use(cors());
@@ -14,7 +32,7 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/generate', async (req, res) => {
-  const { prompt } = req.body;
+  const { prompt, userId } = req.body;
   console.log("Question reçue :", prompt);
 
   try {
@@ -41,12 +59,31 @@ app.post('/api/generate', async (req, res) => {
     }
 
     const content = data?.choices?.[0]?.message?.content || "Aucune réponse reçue.";
+
+    await Message.create({
+      userId,
+      prompt,
+      response: content
+    });
+
+
     res.json({ response: content });
   } catch (error) {
     console.error("Erreur serveur :", error);
     res.status(500).json({
       response: `Erreur serveur: ${error.message}`
     });
+  }
+});
+
+app.get('/api/messages/:userId', async (req, res) => {
+  try {
+    const messages = await Message.find({ userId: req.params.userId })
+      .sort({ createdAt: 1 });
+
+    res.json(messages);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
