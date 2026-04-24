@@ -1,7 +1,23 @@
 import { envoieQuestion } from "./AIQuestion.js";
 
-if (!localStorage.getItem("userId")) {
-  localStorage.setItem("userId", crypto.randomUUID());
+function decodeJWT(token) {
+  try {
+    const payload = token.split('.')[1];
+    const decoded = JSON.parse(atob(payload));
+    return decoded;
+  } catch (error) {
+    console.error("Erreur de décodage JWT:", error);
+    return null;
+  }
+}
+
+
+function getAuthenticatedUserId() {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+  
+  const decoded = decodeJWT(token);
+  return decoded ? decoded.userId : null;
 }
 
 class Message {
@@ -58,12 +74,21 @@ selectedConversation.messages.forEach(msg => {
 
 async function loadMessages() {
   try {
-    const userId = localStorage.getItem("userId");
+    const userId = getAuthenticatedUserId();
+    
+    if (!userId) {
+      console.log("Aucun utilisateur authentifié, chargement des messages ignoré");
+      return;
+    }
 
-    const res = await fetch(`http://localhost:3000/api/messages/${userId}`);
+    const res = await fetch(`http://localhost:3000/api/messages/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem("token")}`
+      }
+    });
 
     if (!res.ok) {
-      throw new Error("Server error: " + res.status);
+      throw new Error("Erreur serveur: " + res.status);
     }
 
     const data = await res.json();
