@@ -1,12 +1,23 @@
-onst express = require('express');
+const express = require('express');
 const cors = require('cors');
-const fetch = require('node-fetch');
-require('dotenv').config();
 const mongoose = require('mongoose');
+require('dotenv').config();
+
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Atlas connecté"))
   .catch(err => console.error("Erreur MongoDB :", err));
+
+const userSchema = new mongoose.Schema({
+  username: { type: String, unique: true },
+  password: String
+});
+
+const User = mongoose.model('User', userSchema);
+
+const SECRET = process.env.JWT_SECRET;
 
 const messageSchema = new mongoose.Schema({
   userId: String,
@@ -31,8 +42,55 @@ app.get('/', (req, res) => {
   res.send('Server OK');
 });
 
-app.post('/api/generate', async (req, res) => {
-  const { prompt, userId } = req.body;
+app.post('/api/register', async (req, res) => {
+  console.log("REGISTER HIT");
+  const { username, password } = req.body;
+
+  try {
+    const hashed = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      username,
+      password: hashed
+    });
+
+    res.json({ message: "User created" });
+
+  } catch (err) {
+    res.status(400).json({ error: "Nom d'utilisateur déjà utilisé" });
+  }
+});
+
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  const user = await User.findOne({ username });
+  if (!user) return res.status(400).json({ error: "Utilisateur non trouvé" });
+
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) return res.status(400).json({ error: "Mot de passe incorrect" });
+
+  const token = jwt.sign({ userId: user._id }, SECRET);
+
+  res.json({ token });
+});
+
+function verifyToken(req, res, next) {
+  const auth = req.headers.authorization;
+  if (!auth) return res.status(401).send("No token");
+
+  try {
+    const decoded = jwt.verify(auth.split(" ")[1], SECRET);
+    req.userId = decoded.userId;
+    next();
+  } catch {
+    res.status(401).send("Invalid token");
+  }
+}
+
+app.post('/api/generate', verifyToken, async (req, res) => {
+  const { prompt } = req.body;
+  const userId = req.userId; // Use authenticated user ID from JWT
   console.log("Question reçue :", prompt);
 
   try {
@@ -76,8 +134,13 @@ app.post('/api/generate', async (req, res) => {
   }
 });
 
-app.get('/api/messages/:userId', async (req, res) => {
+app.get('/api/messages/:userId', verifyToken, async (req, res) => {
   try {
+    // Ensure users can only access their own messages
+    if (req.params.userId !== req.userId) {
+      return res.status(403).json({ error: "Accès refusé" });
+    }
+
     const messages = await Message.find({ userId: req.params.userId })
       .sort({ createdAt: 1 });
 
@@ -88,7 +151,7 @@ app.get('/api/messages/:userId', async (req, res) => {
 });
 
 const server = app.listen(3000, () => {
-  console.log("Server is running on port 3000");
+  console.log("Serveur en cours d'exécution sur le port 3000");
 });
 
 setInterval(() => {
