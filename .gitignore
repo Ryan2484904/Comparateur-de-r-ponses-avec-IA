@@ -2,3 +2,4 @@ node_modules/
 .env.exemple
 MONGO_URI=le URL de mongo
 OPENROUTER_API_KEY=clé de l'api
+JWT_SECRET=cle pour le JWT
