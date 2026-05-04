@@ -44,7 +44,7 @@ const messageSchema = new mongoose.Schema({
 const Message = mongoose.model('Message', messageSchema);
 
 const API_KEY = process.env.OPENROUTER_API_KEY;
-
+console.log("OpenRouter key loaded:", API_KEY ? "YES" : "NO");
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -160,6 +160,7 @@ app.post('/api/generate', verifyToken, async (req, res) => {
   const { prompt, conversationId } = req.body;
   const userId = req.userId; // Use authenticated user ID from JWT
   console.log("Question reçue :", prompt);
+  console.log("conversationId reçu :", conversationId);
 
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -201,17 +202,15 @@ app.post('/api/generate', verifyToken, async (req, res) => {
       response: `Erreur serveur: ${error.message}`
     });
   }
+
 });
 
-app.get('/api/messages/:userId', verifyToken, async (req, res) => {
+app.get('/api/messages/:conversationId', verifyToken, async (req, res) => {
   try {
-    // Ensure users can only access their own messages
-    if (req.params.userId !== req.userId) {
-      return res.status(403).json({ error: "Accès refusé" });
-    }
-
-    const messages = await Message.find({ userId: req.params.userId })
-      .sort({ createdAt: 1 });
+    const messages = await Message.find({
+      userId: req.userId,
+      conversationId: req.params.conversationId
+    }).sort({ createdAt: 1 });
 
     res.json(messages);
   } catch (error) {

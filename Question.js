@@ -34,7 +34,7 @@ class Conversation {
   }
 }
 
-const conversations = [
+let conversations = [
   new Conversation(1, "Chat 1"),
   new Conversation(2, "Chat 2"),
   new Conversation(3, "Chat 3")
@@ -84,7 +84,40 @@ function renderMessages() {
     messagesArea.appendChild(messageDiv);
   });
 }
+async function loadConversations() {
+  try {
+    const res = await fetch("http://localhost:3000/api/conversations", {
+      headers: {
+        "Authorization": `Bearer ${localStorage.getItem("token")}`
+      }
+    });
 
+    const data = await res.json();
+
+    conversations = data.map(chat => {
+      const conversation = new Conversation(chat._id, chat.title);
+      conversation.updatedAt = new Date(chat.updatedAt).getTime();
+      return conversation;
+    });
+
+    if (conversations.length === 0) {
+      selectedConversation = null;
+    } else {
+      selectedConversation = conversations[0];
+    }
+
+    renderConversationList();
+
+if (selectedConversation) {
+  await loadMessages();
+} else {
+  renderMessages();
+}
+
+  } catch (error) {
+    console.error("Erreur loadConversations:", error);
+  }
+}
 function createChatButton() {
   const addButton = document.createElement("div");
   addButton.textContent = "+ Chat";
@@ -98,19 +131,29 @@ function createChatButton() {
   addButton.style.display = "flex";
   addButton.style.alignItems = "center";
 
-  addButton.onclick = function () {
-    const newConversation = new Conversation(
-      nextConversationId,
-      `Chat ${nextConversationId}`
-    );
+  addButton.onclick = async function () {
+  const res = await fetch("http://localhost:3000/api/conversations", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem("token")}`
+    },
+    body: JSON.stringify({
+      title: `Chat ${conversations.length + 1}`
+    })
+  });
 
-    nextConversationId++;
-    conversations.unshift(newConversation);
-    selectedConversation = newConversation;
+  const chat = await res.json();
 
-    renderConversationList();
-    renderMessages();
-  };
+  const newConversation = new Conversation(chat._id, chat.title);
+  newConversation.updatedAt = new Date(chat.updatedAt).getTime();
+
+  conversations.unshift(newConversation);
+  selectedConversation = newConversation;
+
+  renderConversationList();
+  renderMessages();
+};
 
   conversationsColumn.appendChild(addButton);
 }
@@ -264,6 +307,7 @@ progressCircle.style.animation = "fillDeleteCircle 1s linear forwards";
       selectedConversation = conversation;
       renderConversationList();
       renderMessages();
+      loadMessages();
     };
 
     item.appendChild(title);
@@ -274,14 +318,9 @@ progressCircle.style.animation = "fillDeleteCircle 1s linear forwards";
 
 async function loadMessages() {
   try {
-    const userId = getAuthenticatedUserId();
+    if (!selectedConversation) return;
 
-    if (!userId) {
-      console.log("Aucun utilisateur authentifié, chargement des messages ignoré");
-      return;
-    }
-
-    const res = await fetch(`http://localhost:3000/api/messages/${userId}`, {
+const res = await fetch(`http://localhost:3000/api/messages/${selectedConversation.id}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem("token")}`
       }
@@ -325,5 +364,4 @@ button.addEventListener("click", async () => {
   input.value = "";
 });
 
-renderConversationList();
-loadMessages();
+loadConversations();

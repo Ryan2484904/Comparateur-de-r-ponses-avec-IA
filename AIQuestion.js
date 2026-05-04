@@ -6,9 +6,9 @@ async function envoieQuestion(contenu, conversationId){
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem("token")}`
             },
-            body: JSON.stringify({ 
+           body: JSON.stringify({ 
   prompt: contenu,
-  conversationId: currentConversationId
+  conversationId: conversationId
 })
         });
 
