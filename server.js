@@ -149,7 +149,10 @@ app.delete('/api/conversations/:id', verifyToken, async (req, res) => {
       _id: req.params.id,
       userId: req.userId
     });
-
+await Message.deleteMany({
+  conversationId: req.params.id,
+  userId: req.userId
+});
     res.json({ message: "Conversation deleted" });
   } catch (error) {
     res.status(500).json({ error: error.message });

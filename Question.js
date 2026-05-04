@@ -182,9 +182,15 @@ function renderConversationList() {
    const title = document.createElement("span");
 title.textContent = conversation.title;
 title.style.flex = "1";
+title.style.userSelect = "none";
+title.style.cursor = "text";
+title.onclick = function (event) {
+  event.stopPropagation();
+};
 
-// ✅ DOUBLE CLICK TO EDIT
-title.ondblclick = function (event) {
+// DOUBLE CLICK TO EDIT
+title.addEventListener("dblclick", function (event) {
+    event.preventDefault();
   event.stopPropagation();
 
   const input = document.createElement("input");
@@ -196,10 +202,29 @@ title.ondblclick = function (event) {
   input.focus();
 
   // Save function
-  const save = () => {
-    conversation.title = input.value.trim() || "Untitled";
+  const save = async () => {
+  const newTitle = input.value.trim() || "Untitled";
+
+  const res = await fetch(`http://localhost:3000/api/conversations/${conversation.id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem("token")}`
+    },
+    body: JSON.stringify({
+      title: newTitle
+    })
+  });
+
+  if (!res.ok) {
+    console.error("Erreur lors du changement de titre");
     renderConversationList();
-  };
+    return;
+  }
+
+  conversation.title = newTitle;
+  renderConversationList();
+};
 
   // Cancel function
   let cancelled = false;
@@ -211,8 +236,8 @@ const cancel = () => {
 
   input.onkeydown = function (e) {
     if (e.key === "Enter") {
-      save();
-    }
+  input.blur();
+}
     if (e.key === "Escape") {
       cancel();
     }
@@ -220,7 +245,7 @@ const cancel = () => {
 input.onblur = () => {
   if (!cancelled) save();
 };
-};
+});
 
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "X";
@@ -274,19 +299,34 @@ progressCircle.style.mask =
 progressCircle.style.webkitMask = progressCircle.style.mask;
 progressCircle.style.animation = "fillDeleteCircle 1s linear forwards";
 
-  deleteTimer = setTimeout(() => {
-    const index = conversations.indexOf(conversation);
-    if (index !== -1) {
-      conversations.splice(index, 1);
+  deleteTimer = setTimeout(async () => {
+  const res = await fetch(`http://localhost:3000/api/conversations/${conversation.id}`, {
+    method: "DELETE",
+    headers: {
+      "Authorization": `Bearer ${localStorage.getItem("token")}`
     }
+  });
 
-    if (selectedConversation && selectedConversation.id === conversation.id) {
-      selectedConversation = conversations[0] || null;
+  if (!res.ok) {
+    console.error("Erreur lors de la suppression du chat");
+    return;
+  }
+
+  const index = conversations.indexOf(conversation);
+  if (index !== -1) {
+    conversations.splice(index, 1);
+  }
+
+  if (selectedConversation && selectedConversation.id === conversation.id) {
+    selectedConversation = conversations[0] || null;
+    if (selectedConversation) {
+      await loadMessages();
     }
+  }
 
-    renderConversationList();
-    renderMessages();
-  }, 1000);
+  renderConversationList();
+  renderMessages();
+}, 1000);
 };
 
     deleteBtn.onmouseup = function (event) {
