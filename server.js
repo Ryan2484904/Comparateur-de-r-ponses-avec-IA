@@ -44,10 +44,71 @@ const messageSchema = new mongoose.Schema({
 const Message = mongoose.model('Message', messageSchema);
 
 const API_KEY = process.env.OPENROUTER_API_KEY;
-console.log("OpenRouter key loaded:", API_KEY ? "YES" : "NO");
+console.log("OpenRouter key loaded:", API_KEY ? API_KEY.slice(0, 12) + "..." : "NO");
+console.log("OpenRouter key length:", API_KEY ? API_KEY.length : 0);
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const MODELS = [
+  "openrouter/auto",
+  "openrouter/auto",
+  "openrouter/auto"
+];
+
+async function askModel(model, prompt) {
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+
+  const data = await response.json();
+
+  return {
+    model,
+    answer: response.ok
+      ? data?.choices?.[0]?.message?.content || "Aucune réponse reçue."
+      : `Erreur: ${data?.error?.message || "erreur inconnue"}`
+  };
+}
+
+async function compareAnswers(prompt, answers) {
+const comparisonPrompt = `
+Question:
+${prompt}
+
+Réponse 1 (${answers[0].model}):
+${answers[0].answer}
+
+Réponse 2 (${answers[1].model}):
+${answers[1].answer}
+
+Réponse 3 (${answers[2].model}):
+${answers[2].answer}
+
+Choisis la meilleure réponse.
+
+IMPORTANT:
+- Réponds STRICTEMENT en JSON
+- Format attendu:
+{
+  "best_model": "nom_du_model",
+  "best_answer": "texte_de_la_meilleure_réponse"
+}
+
+Même si les réponses sont équivalentes, choisis-en une.
+`;
+
+  const judge = await askModel("openrouter/auto", comparisonPrompt);
+  return judge.answer;
+}
 
 app.get('/', (req, res) => {
   console.log("GET /");
@@ -161,51 +222,50 @@ await Message.deleteMany({
 
 app.post('/api/generate', verifyToken, async (req, res) => {
   const { prompt, conversationId } = req.body;
-  const userId = req.userId; // Use authenticated user ID from JWT
+  const userId = req.userId;
+
   console.log("Question reçue :", prompt);
   console.log("conversationId reçu :", conversationId);
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "openrouter/auto",
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
+    const answers = await Promise.all(
+      MODELS.map(model => askModel(model, prompt))
+    );
 
-    const data = await response.json();
-    console.log("Status OpenRouter :", response.status);
-    console.log("Réponse OpenRouter :", JSON.stringify(data, null, 2));
+const rawComparison = await compareAnswers(prompt, answers);
 
-    if (!response.ok) {
-      return res.status(response.status).json({
-        response: `Erreur OpenRouter: ${data?.error?.message || "erreur inconnue"}`
-      });
-    }
+let best;
+try {
+  best = JSON.parse(rawComparison);
+} catch {
+  console.log("Erreur parsing JSON:", rawComparison);
+  best = {
+    best_model: answers[0].model,
+    best_answer: answers[0].answer
+  };
+}
 
-    const content = data?.choices?.[0]?.message?.content || "Aucune réponse reçue.";
+const content = `
+Meilleure réponse (${best.best_model}):
+
+${best.best_answer}
+`;
 
     await Message.create({
-    userId,
-    conversationId,
-    prompt,
-    response: content
-  });
-
+      userId,
+      conversationId,
+      prompt,
+      response: content
+    });
 
     res.json({ response: content });
+
   } catch (error) {
     console.error("Erreur serveur :", error);
     res.status(500).json({
       response: `Erreur serveur: ${error.message}`
     });
   }
-
 });
 
 app.get('/api/messages/:conversationId', verifyToken, async (req, res) => {
