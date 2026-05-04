@@ -1,4 +1,4 @@
-async function envoieQuestion(contenu){
+async function envoieQuestion(contenu, conversationId){
     try{
         const reponse = await fetch('http://localhost:3000/api/generate', {
             method: 'POST',
@@ -7,8 +7,9 @@ async function envoieQuestion(contenu){
                 'Authorization': `Bearer ${localStorage.getItem("token")}`
             },
             body: JSON.stringify({ 
-                prompt: contenu
-            })
+  prompt: contenu,
+  conversationId: currentConversationId
+})
         });
 
         const reponseIA = await reponse.json();

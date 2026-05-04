@@ -41,6 +41,9 @@ const conversations = [
 ];
 
 let selectedConversation = conversations[0];
+function getCurrentConversationId() {
+  return selectedConversation.id;
+}
 let nextConversationId = 4;
 
 const input = document.querySelector(".message-input");
@@ -313,7 +316,7 @@ button.addEventListener("click", async () => {
   moveConversationToTop(selectedConversation);
   renderMessages();
 
-  const response = await envoieQuestion(text);
+  const response = await envoieQuestion(text, getCurrentConversationId());
 
   selectedConversation.messages.push(new Message("ai", response));
   moveConversationToTop(selectedConversation);

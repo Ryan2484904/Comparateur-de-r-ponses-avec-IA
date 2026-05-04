@@ -19,8 +19,20 @@ const User = mongoose.model('User', userSchema);
 
 const SECRET = process.env.JWT_SECRET;
 
+const conversationSchema = new mongoose.Schema({
+  userId: String,
+  title: String,
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+const Conversation = mongoose.model('Conversation', conversationSchema);
+
 const messageSchema = new mongoose.Schema({
   userId: String,
+  conversationId: String,
   prompt: String,
   response: String,
   createdAt: {
@@ -88,8 +100,64 @@ function verifyToken(req, res, next) {
   }
 }
 
+app.get('/api/conversations', verifyToken, async (req, res) => {
+  try {
+    const conversations = await Conversation.find({ userId: req.userId })
+      .sort({ updatedAt: -1 });
+
+    res.json(conversations);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/conversations', verifyToken, async (req, res) => {
+  try {
+    const { title } = req.body;
+
+    const conversation = await Conversation.create({
+      userId: req.userId,
+      title: title || "New Chat",
+      updatedAt: new Date()
+    });
+
+    res.json(conversation);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.patch('/api/conversations/:id', verifyToken, async (req, res) => {
+  try {
+    const { title } = req.body;
+
+    const conversation = await Conversation.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
+      { title, updatedAt: new Date() },
+      { new: true }
+    );
+
+    res.json(conversation);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/conversations/:id', verifyToken, async (req, res) => {
+  try {
+    await Conversation.deleteOne({
+      _id: req.params.id,
+      userId: req.userId
+    });
+
+    res.json({ message: "Conversation deleted" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/generate', verifyToken, async (req, res) => {
-  const { prompt } = req.body;
+  const { prompt, conversationId } = req.body;
   const userId = req.userId; // Use authenticated user ID from JWT
   console.log("Question reçue :", prompt);
 
@@ -119,10 +187,11 @@ app.post('/api/generate', verifyToken, async (req, res) => {
     const content = data?.choices?.[0]?.message?.content || "Aucune réponse reçue.";
 
     await Message.create({
-      userId,
-      prompt,
-      response: content
-    });
+    userId,
+    conversationId,
+    prompt,
+    response: content
+  });
 
 
     res.json({ response: content });
