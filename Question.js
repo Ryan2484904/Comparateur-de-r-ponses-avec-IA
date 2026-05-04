@@ -3,19 +3,17 @@ import { envoieQuestion } from "./AIQuestion.js";
 function decodeJWT(token) {
   try {
     const payload = token.split('.')[1];
-    const decoded = JSON.parse(atob(payload));
-    return decoded;
+    return JSON.parse(atob(payload));
   } catch (error) {
     console.error("Erreur de décodage JWT:", error);
     return null;
   }
 }
 
-
 function getAuthenticatedUserId() {
   const token = localStorage.getItem("token");
   if (!token) return null;
-  
+
   const decoded = decodeJWT(token);
   return decoded ? decoded.userId : null;
 }
@@ -28,54 +26,253 @@ class Message {
 }
 
 class Conversation {
-  constructor(id, title, messages) {
+  constructor(id, title, messages = []) {
     this.id = id;
     this.title = title;
     this.messages = messages;
+    this.updatedAt = Date.now();
   }
 }
 
 const conversations = [
-  new Conversation(1, "Chat 1", []),
-  new Conversation(2, "Chat 2", []),
-  new Conversation(3, "Chat 3", [])
+  new Conversation(1, "Chat 1"),
+  new Conversation(2, "Chat 2"),
+  new Conversation(3, "Chat 3")
 ];
 
 let selectedConversation = conversations[0];
+let nextConversationId = 4;
 
 const input = document.querySelector(".message-input");
 const button = document.querySelector(".send-button");
 const messagesArea = document.querySelector(".messages-area");
 const conversationsColumn = document.querySelector(".conversations-column");
 
+function sortConversations() {
+  conversations.sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+function moveConversationToTop(conversation) {
+  conversation.updatedAt = Date.now();
+  sortConversations();
+  renderConversationList();
+}
+
 function renderMessages() {
   messagesArea.innerHTML = "";
 
-selectedConversation.messages.forEach(msg => {
-  const messageDiv = document.createElement("div");
+  if (!selectedConversation) return;
 
-  if (msg.sender === "user") {
-    messageDiv.className = "p-2 mb-2 rounded bg-primary text-white align-self-end";
-  } else {
-    messageDiv.className = "p-2 mb-2 rounded bg-light align-self-start";
-  }
+  selectedConversation.messages.forEach(msg => {
+    const messageDiv = document.createElement("div");
 
-  // 👇 ADD THESE HERE
-  messageDiv.style.maxWidth = "60%";
-  messageDiv.style.wordWrap = "break-word";
-  messageDiv.style.marginLeft = msg.sender === "user" ? "auto" : "0";
-  messageDiv.style.marginRight = msg.sender === "user" ? "0" : "auto";
+    if (msg.sender === "user") {
+      messageDiv.className = "p-2 mb-2 rounded bg-primary text-white align-self-end";
+    } else {
+      messageDiv.className = "p-2 mb-2 rounded bg-light align-self-start";
+    }
 
-  messageDiv.textContent = msg.text;
+    messageDiv.style.maxWidth = "60%";
+    messageDiv.style.wordWrap = "break-word";
+    messageDiv.style.marginLeft = msg.sender === "user" ? "auto" : "0";
+    messageDiv.style.marginRight = msg.sender === "user" ? "0" : "auto";
 
-  messagesArea.appendChild(messageDiv);
-});
+    messageDiv.textContent = msg.text;
+    messagesArea.appendChild(messageDiv);
+  });
+}
+
+function createChatButton() {
+  const addButton = document.createElement("div");
+  addButton.textContent = "+ Chat";
+
+  addButton.className = "bg-white rounded";
+  addButton.style.padding = "15px";
+  addButton.style.borderRadius = "10px";
+  addButton.style.cursor = "pointer";
+  addButton.style.fontWeight = "bold";
+  addButton.style.height = "70px";
+  addButton.style.display = "flex";
+  addButton.style.alignItems = "center";
+
+  addButton.onclick = function () {
+    const newConversation = new Conversation(
+      nextConversationId,
+      `Chat ${nextConversationId}`
+    );
+
+    nextConversationId++;
+    conversations.unshift(newConversation);
+    selectedConversation = newConversation;
+
+    renderConversationList();
+    renderMessages();
+  };
+
+  conversationsColumn.appendChild(addButton);
+}
+
+function renderConversationList() {
+  conversationsColumn.innerHTML = "";
+
+  createChatButton();
+  sortConversations();
+
+  conversations.forEach(conversation => {
+    const item = document.createElement("div");
+
+    item.style.padding = "15px";
+    item.style.borderRadius = "10px";
+    item.style.cursor = "pointer";
+    item.style.height = "70px";
+    item.style.display = "flex";
+    item.style.alignItems = "center";
+    item.style.justifyContent = "space-between";
+    item.style.position = "relative";
+
+    item.style.background =
+      conversation.id === selectedConversation.id ? "lightgray" : "white";
+
+   const title = document.createElement("span");
+title.textContent = conversation.title;
+title.style.flex = "1";
+
+// ✅ DOUBLE CLICK TO EDIT
+title.ondblclick = function (event) {
+  event.stopPropagation();
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = conversation.title;
+  input.style.width = "100%";
+
+  item.replaceChild(input, title);
+  input.focus();
+
+  // Save function
+  const save = () => {
+    conversation.title = input.value.trim() || "Untitled";
+    renderConversationList();
+  };
+
+  // Cancel function
+  let cancelled = false;
+
+const cancel = () => {
+  cancelled = true;
+  renderConversationList();
+};
+
+  input.onkeydown = function (e) {
+    if (e.key === "Enter") {
+      save();
+    }
+    if (e.key === "Escape") {
+      cancel();
+    }
+  };
+input.onblur = () => {
+  if (!cancelled) save();
+};
+};
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "X";
+    deleteBtn.style.display = "none";
+    deleteBtn.style.border = "none";
+    deleteBtn.style.background = "transparent";
+    deleteBtn.style.color = "red";
+    deleteBtn.style.fontWeight = "bold";
+    deleteBtn.style.cursor = "pointer";
+    deleteBtn.style.width = "35px";
+    deleteBtn.style.height = "35px";
+    deleteBtn.style.borderRadius = "50%";
+    deleteBtn.style.position = "relative";
+
+    let deleteTimer;
+    let progressCircle;
+
+    item.onmouseenter = function () {
+      deleteBtn.style.display = "block";
+    };
+
+    item.onmouseleave = function () {
+      deleteBtn.style.display = "none";
+      clearTimeout(deleteTimer);
+
+      if (progressCircle) {
+        progressCircle.remove();
+        progressCircle = null;
+      }
+    };
+
+ deleteBtn.onmousedown = function (event) {
+  event.stopPropagation();
+
+  progressCircle = document.createElement("div");
+  progressCircle.style.position = "absolute";
+  progressCircle.style.top = "0";
+  progressCircle.style.left = "0";
+  progressCircle.style.width = "35px";
+  progressCircle.style.height = "35px";
+  progressCircle.style.borderRadius = "50%";
+
+  progressCircle.style.setProperty("--deleteProgress", "0deg");
+
+  deleteBtn.appendChild(progressCircle);
+
+  progressCircle.style.background =
+  "conic-gradient(from -90deg, red var(--deleteProgress), transparent 0deg)";
+progressCircle.style.mask =
+  "radial-gradient(farthest-side, transparent calc(100% - 3px), black 0)";
+progressCircle.style.webkitMask = progressCircle.style.mask;
+progressCircle.style.animation = "fillDeleteCircle 1s linear forwards";
+
+  deleteTimer = setTimeout(() => {
+    const index = conversations.indexOf(conversation);
+    if (index !== -1) {
+      conversations.splice(index, 1);
+    }
+
+    if (selectedConversation && selectedConversation.id === conversation.id) {
+      selectedConversation = conversations[0] || null;
+    }
+
+    renderConversationList();
+    renderMessages();
+  }, 1000);
+};
+
+    deleteBtn.onmouseup = function (event) {
+      event.stopPropagation();
+      clearTimeout(deleteTimer);
+
+      if (progressCircle) {
+        progressCircle.remove();
+        progressCircle = null;
+      }
+    };
+
+    deleteBtn.onclick = function (event) {
+      event.stopPropagation();
+    };
+
+    item.onclick = function () {
+      selectedConversation = conversation;
+      renderConversationList();
+      renderMessages();
+    };
+
+    item.appendChild(title);
+    item.appendChild(deleteBtn);
+    conversationsColumn.appendChild(item);
+  });
 }
 
 async function loadMessages() {
   try {
     const userId = getAuthenticatedUserId();
-    
+
     if (!userId) {
       console.log("Aucun utilisateur authentifié, chargement des messages ignoré");
       return;
@@ -100,6 +297,7 @@ async function loadMessages() {
       selectedConversation.messages.push(new Message("ai", msg.response));
     });
 
+    selectedConversation.updatedAt = Date.now();
     renderMessages();
 
   } catch (error) {
@@ -107,43 +305,22 @@ async function loadMessages() {
   }
 }
 
-function renderConversationList() {
-  conversationsColumn.innerHTML = "";
-
-  conversations.forEach(conversation => {
-    const item = document.createElement("div");
-    item.textContent = conversation.title;
-    item.style.padding = "15px";
-    item.style.borderRadius = "10px";
-    item.style.cursor = "pointer";
-    item.style.background =
-      conversation.id === selectedConversation.id ? "lightgray" : "white";
-
-    item.onclick = function () {
-      selectedConversation = conversation;
-      renderConversationList();
-      renderMessages();
-    };
-
-    conversationsColumn.appendChild(item);
-  });
-}
-
-renderConversationList();
-
 button.addEventListener("click", async () => {
   const text = input.value.trim();
   if (text === "") return;
 
   selectedConversation.messages.push(new Message("user", text));
+  moveConversationToTop(selectedConversation);
   renderMessages();
 
   const response = await envoieQuestion(text);
 
   selectedConversation.messages.push(new Message("ai", response));
+  moveConversationToTop(selectedConversation);
   renderMessages();
 
   input.value = "";
 });
 
+renderConversationList();
 loadMessages();
