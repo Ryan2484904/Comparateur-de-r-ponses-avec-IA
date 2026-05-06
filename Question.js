@@ -1,23 +1,5 @@
 import { envoieQuestion } from "./AIQuestion.js";
 
-function decodeJWT(token) {
-  try {
-    const payload = token.split('.')[1];
-    return JSON.parse(atob(payload));
-  } catch (error) {
-    console.error("Erreur de décodage JWT:", error);
-    return null;
-  }
-}
-
-function getAuthenticatedUserId() {
-  const token = localStorage.getItem("token");
-  if (!token) return null;
-
-  const decoded = decodeJWT(token);
-  return decoded ? decoded.userId : null;
-}
-
 class Message {
   constructor(sender, text) {
     this.sender = sender;
