@@ -1,3 +1,20 @@
+/**
+ * Backend principal du projet Comparateur-de-réponses-avec-IA.
+ *
+ * Ce fichier gère :
+ * - le serveur Express
+ * - les routes API
+ * - la connexion MongoDB
+ * - l’authentification JWT
+ * - la communication avec OpenRouter
+ * - le système multi-IA
+ * - la comparaison des réponses IA
+ *
+ * @author Tianlang Xu
+ * @author Ryan Quoch
+ */
+
+
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
