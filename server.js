@@ -51,9 +51,9 @@ app.use(cors());
 app.use(express.json());
 
 const MODELS = [
-  "openrouter/auto",
-  "openrouter/auto",
-  "openrouter/auto"
+  "meta-llama/llama-3.1-8b-instruct",
+  "mistralai/mistral-7b-instruct",
+  "google/gemma-2-9b-it"
 ];
 
 async function askModel(model, prompt) {
@@ -106,7 +106,7 @@ IMPORTANT:
 Même si les réponses sont équivalentes, choisis-en une.
 `;
 
-  const judge = await askModel("openrouter/auto", comparisonPrompt);
+  const judge = await askModel("meta-llama/llama-3.1-8b-instruct", comparisonPrompt);
   return judge.answer;
 }
 
@@ -233,7 +233,7 @@ app.post('/api/generate', verifyToken, async (req, res) => {
     );
 
 const rawComparison = await compareAnswers(prompt, answers);
-
+console.log("RAW COMPARISON:", rawComparison);
 let best;
 try {
   best = JSON.parse(rawComparison);

@@ -4,5 +4,24 @@ MONGO_URI=le URL de mongo
 OPENROUTER_API_KEY=clé de l'api
 JWT_SECRET=cle pour le JWT
 
+# Environment variables
 .env
+
+# Dependencies
 node_modules/
+
+# Logs
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code (optional)
+.vscode/
+
+# Build folders
+dist/
+build/
