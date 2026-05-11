@@ -17,7 +17,7 @@ async function connexion() {
 
     localStorage.setItem("token", donnees.token);
 
-    window.location.href = "Interface.html";
+    window.location.href = "structure.html";
 }
 
 async function inscription() {
