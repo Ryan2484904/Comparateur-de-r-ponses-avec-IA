@@ -8,11 +8,11 @@ class Message {
 }
 
 class Conversation {
-  constructor(id, title, messages = []) {
+  constructor(id, titre, messages = []) {
     this.id = id;
-    this.title = title;
+    this.titre = titre;
     this.messages = messages;
-    this.updatedAt = Date.now();
+    this.misAJourLe = Date.now();
   }
 }
 
@@ -22,9 +22,9 @@ let conversations = [
   new Conversation(3, "Chat 3")
 ];
 
-let selectedConversation = conversations[0];
-function getCurrentConversationId() {
-  return selectedConversation.id;
+let conversationSelectionnee = conversations[0];
+function obtenirIdConversationCourante() {
+  return conversationSelectionnee.id;
 }
 let nextConversationId = 4;
 
@@ -33,40 +33,41 @@ const button = document.querySelector(".send-button");
 const messagesArea = document.querySelector(".messages-area");
 const conversationsColumn = document.querySelector(".conversations-column");
 
-function sortConversations() {
-  conversations.sort((a, b) => b.updatedAt - a.updatedAt);
+function trierConversations() {
+  conversations.sort((a, b) => b.misAJourLe - a.misAJourLe);
 }
 
-function moveConversationToTop(conversation) {
-  conversation.updatedAt = Date.now();
-  sortConversations();
-  renderConversationList();
+function deplacerConversationEnHaut(conversation) {
+  if (!conversation) return;
+  conversation.misAJourLe = Date.now();
+  trierConversations();
+  rendreListeConversations();
 }
 
-function renderMessages() {
+function rendreMessages() {
   messagesArea.innerHTML = "";
 
-  if (!selectedConversation) return;
+  if (!conversationSelectionnee) return;
 
-  selectedConversation.messages.forEach(msg => {
-    const messageDiv = document.createElement("div");
+  conversationSelectionnee.messages.forEach(msg => {
+    const divMessage = document.createElement("div");
 
     if (msg.sender === "user") {
-      messageDiv.className = "p-2 mb-2 rounded bg-primary text-white align-self-end";
+      divMessage.className = "p-2 mb-2 rounded bg-primary text-white align-self-end";
     } else {
-      messageDiv.className = "p-2 mb-2 rounded bg-light align-self-start";
+      divMessage.className = "p-2 mb-2 rounded bg-light align-self-start";
     }
 
-    messageDiv.style.maxWidth = "60%";
-    messageDiv.style.wordWrap = "break-word";
-    messageDiv.style.marginLeft = msg.sender === "user" ? "auto" : "0";
-    messageDiv.style.marginRight = msg.sender === "user" ? "0" : "auto";
+    divMessage.style.maxWidth = "60%";
+    divMessage.style.wordWrap = "break-word";
+    divMessage.style.marginLeft = msg.sender === "user" ? "auto" : "0";
+    divMessage.style.marginRight = msg.sender === "user" ? "0" : "auto";
 
-    messageDiv.textContent = msg.text;
-    messagesArea.appendChild(messageDiv);
+    divMessage.textContent = msg.text;
+    messagesArea.appendChild(divMessage);
   });
 }
-async function loadConversations() {
+async function chargerConversations() {
   try {
     const res = await fetch("http://localhost:3000/api/conversations", {
       headers: {
@@ -74,46 +75,46 @@ async function loadConversations() {
       }
     });
 
-    const data = await res.json();
+    const donnees = await res.json();
 
-    conversations = data.map(chat => {
-      const conversation = new Conversation(chat._id, chat.title);
-      conversation.updatedAt = new Date(chat.updatedAt).getTime();
+    conversations = donnees.map(chat => {
+      const conversation = new Conversation(chat._id, chat.titre || chat.title);
+      conversation.misAJourLe = new Date(chat.misAJourLe || chat.updatedAt).getTime();
       return conversation;
     });
 
     if (conversations.length === 0) {
-      selectedConversation = null;
+      conversationSelectionnee = null;
     } else {
-      selectedConversation = conversations[0];
+      conversationSelectionnee = conversations[0];
     }
 
-    renderConversationList();
+    rendreListeConversations();
 
-if (selectedConversation) {
-  await loadMessages();
+if (conversationSelectionnee) {
+  await chargerMessages();
 } else {
-  renderMessages();
+  rendreMessages();
 }
 
   } catch (error) {
-    console.error("Erreur loadConversations:", error);
+    console.error("Erreur chargerConversations:", error);
   }
 }
-function createChatButton() {
-  const addButton = document.createElement("div");
-  addButton.textContent = "+ Chat";
+function creerBoutonChat() {
+  const boutonAjouter = document.createElement("div");
+  boutonAjouter.textContent = "+ Chat";
 
-  addButton.className = "bg-white rounded";
-  addButton.style.padding = "15px";
-  addButton.style.borderRadius = "10px";
-  addButton.style.cursor = "pointer";
-  addButton.style.fontWeight = "bold";
-  addButton.style.height = "70px";
-  addButton.style.display = "flex";
-  addButton.style.alignItems = "center";
+  boutonAjouter.className = "bg-white rounded";
+  boutonAjouter.style.padding = "15px";
+  boutonAjouter.style.borderRadius = "10px";
+  boutonAjouter.style.cursor = "pointer";
+  boutonAjouter.style.fontWeight = "bold";
+  boutonAjouter.style.height = "70px";
+  boutonAjouter.style.display = "flex";
+  boutonAjouter.style.alignItems = "center";
 
-  addButton.onclick = async function () {
+  boutonAjouter.onclick = async function () {
   const res = await fetch("http://localhost:3000/api/conversations", {
     method: "POST",
     headers: {
@@ -121,30 +122,30 @@ function createChatButton() {
       "Authorization": `Bearer ${localStorage.getItem("token")}`
     },
     body: JSON.stringify({
-      title: `Chat ${conversations.length + 1}`
+      titre: `Chat ${conversations.length + 1}`
     })
   });
 
   const chat = await res.json();
 
-  const newConversation = new Conversation(chat._id, chat.title);
-  newConversation.updatedAt = new Date(chat.updatedAt).getTime();
+  const nouvelleConversation = new Conversation(chat._id, chat.titre || chat.title);
+  nouvelleConversation.misAJourLe = new Date(chat.misAJourLe || chat.updatedAt).getTime();
 
-  conversations.unshift(newConversation);
-  selectedConversation = newConversation;
+  conversations.unshift(nouvelleConversation);
+  conversationSelectionnee = nouvelleConversation;
 
-  renderConversationList();
-  renderMessages();
+  rendreListeConversations();
+  rendreMessages();
 };
 
-  conversationsColumn.appendChild(addButton);
+  conversationsColumn.appendChild(boutonAjouter);
 }
 
-function renderConversationList() {
+function rendreListeConversations() {
   conversationsColumn.innerHTML = "";
 
-  createChatButton();
-  sortConversations();
+  creerBoutonChat();
+  trierConversations();
 
   conversations.forEach(conversation => {
     const item = document.createElement("div");
@@ -159,33 +160,33 @@ function renderConversationList() {
     item.style.position = "relative";
 
     item.style.background =
-      conversation.id === selectedConversation.id ? "lightgray" : "white";
+      conversation.id === conversationSelectionnee.id ? "lightgray" : "white";
 
-   const title = document.createElement("span");
-title.textContent = conversation.title;
-title.style.flex = "1";
-title.style.userSelect = "none";
-title.style.cursor = "text";
-title.onclick = function (event) {
+   const titre = document.createElement("span");
+titre.textContent = conversation.titre;
+titre.style.flex = "1";
+titre.style.userSelect = "none";
+titre.style.cursor = "text";
+titre.onclick = function (event) {
   event.stopPropagation();
 };
 
-// DOUBLE CLICK TO EDIT
-title.addEventListener("dblclick", function (event) {
+// DOUBLE CLICK POUR EDITER
+titre.addEventListener("dblclick", function (event) {
     event.preventDefault();
   event.stopPropagation();
 
-  const input = document.createElement("input");
-  input.type = "text";
-  input.value = conversation.title;
-  input.style.width = "100%";
+  const saisie = document.createElement("input");
+  saisie.type = "text";
+  saisie.value = conversation.titre;
+  saisie.style.width = "100%";
 
-  item.replaceChild(input, title);
-  input.focus();
+  item.replaceChild(saisie, titre);
+  saisie.focus();
 
-  // Save function
-  const save = async () => {
-  const newTitle = input.value.trim() || "Untitled";
+  // Fonction sauvegarder
+  const sauvegarder = async () => {
+  const nouveauTitre = saisie.value.trim() || "Sans titre";
 
   const res = await fetch(`http://localhost:3000/api/conversations/${conversation.id}`, {
     method: "PATCH",
@@ -194,94 +195,94 @@ title.addEventListener("dblclick", function (event) {
       "Authorization": `Bearer ${localStorage.getItem("token")}`
     },
     body: JSON.stringify({
-      title: newTitle
+      titre: nouveauTitre
     })
   });
 
   if (!res.ok) {
     console.error("Erreur lors du changement de titre");
-    renderConversationList();
+    rendreListeConversations();
     return;
   }
 
-  conversation.title = newTitle;
-  renderConversationList();
+  conversation.titre = nouveauTitre;
+  rendreListeConversations();
 };
 
-  // Cancel function
-  let cancelled = false;
+  // Fonction annuler
+  let annule = false;
 
-const cancel = () => {
-  cancelled = true;
-  renderConversationList();
+const annuler = () => {
+  annule = true;
+  rendreListeConversations();
 };
 
-  input.onkeydown = function (e) {
+  saisie.onkeydown = function (e) {
     if (e.key === "Enter") {
-  input.blur();
+  saisie.blur();
 }
     if (e.key === "Escape") {
-      cancel();
+      annuler();
     }
   };
-input.onblur = () => {
-  if (!cancelled) save();
+saisie.onblur = () => {
+  if (!annule) sauvegarder();
 };
 });
 
-    const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "X";
-    deleteBtn.style.display = "none";
-    deleteBtn.style.border = "none";
-    deleteBtn.style.background = "transparent";
-    deleteBtn.style.color = "red";
-    deleteBtn.style.fontWeight = "bold";
-    deleteBtn.style.cursor = "pointer";
-    deleteBtn.style.width = "35px";
-    deleteBtn.style.height = "35px";
-    deleteBtn.style.borderRadius = "50%";
-    deleteBtn.style.position = "relative";
+    const boutonSupprimer = document.createElement("button");
+    boutonSupprimer.textContent = "X";
+    boutonSupprimer.style.display = "none";
+    boutonSupprimer.style.border = "none";
+    boutonSupprimer.style.background = "transparent";
+    boutonSupprimer.style.color = "red";
+    boutonSupprimer.style.fontWeight = "bold";
+    boutonSupprimer.style.cursor = "pointer";
+    boutonSupprimer.style.width = "35px";
+    boutonSupprimer.style.height = "35px";
+    boutonSupprimer.style.borderRadius = "50%";
+    boutonSupprimer.style.position = "relative";
 
-    let deleteTimer;
-    let progressCircle;
+    let minuterieSuppression;
+    let cercleProgres;
 
     item.onmouseenter = function () {
-      deleteBtn.style.display = "block";
+      boutonSupprimer.style.display = "block";
     };
 
     item.onmouseleave = function () {
-      deleteBtn.style.display = "none";
-      clearTimeout(deleteTimer);
+      boutonSupprimer.style.display = "none";
+      clearTimeout(minuterieSuppression);
 
-      if (progressCircle) {
-        progressCircle.remove();
-        progressCircle = null;
+      if (cercleProgres) {
+        cercleProgres.remove();
+        cercleProgres = null;
       }
     };
 
- deleteBtn.onmousedown = function (event) {
+ boutonSupprimer.onmousedown = function (event) {
   event.stopPropagation();
 
-  progressCircle = document.createElement("div");
-  progressCircle.style.position = "absolute";
-  progressCircle.style.top = "0";
-  progressCircle.style.left = "0";
-  progressCircle.style.width = "35px";
-  progressCircle.style.height = "35px";
-  progressCircle.style.borderRadius = "50%";
+  cercleProgres = document.createElement("div");
+  cercleProgres.style.position = "absolute";
+  cercleProgres.style.top = "0";
+  cercleProgres.style.left = "0";
+  cercleProgres.style.width = "35px";
+  cercleProgres.style.height = "35px";
+  cercleProgres.style.borderRadius = "50%";
 
-  progressCircle.style.setProperty("--deleteProgress", "0deg");
+  cercleProgres.style.setProperty("--deleteProgress", "0deg");
 
-  deleteBtn.appendChild(progressCircle);
+  boutonSupprimer.appendChild(cercleProgres);
 
-  progressCircle.style.background =
+  cercleProgres.style.background =
   "conic-gradient(from -90deg, red var(--deleteProgress), transparent 0deg)";
-progressCircle.style.mask =
+  cercleProgres.style.mask =
   "radial-gradient(farthest-side, transparent calc(100% - 3px), black 0)";
-progressCircle.style.webkitMask = progressCircle.style.mask;
-progressCircle.style.animation = "fillDeleteCircle 1s linear forwards";
+  cercleProgres.style.webkitMask = cercleProgres.style.mask;
+  cercleProgres.style.animation = "fillDeleteCircle 1s linear forwards";
 
-  deleteTimer = setTimeout(async () => {
+  minuterieSuppression = setTimeout(async () => {
   const res = await fetch(`http://localhost:3000/api/conversations/${conversation.id}`, {
     method: "DELETE",
     headers: {
@@ -299,50 +300,50 @@ progressCircle.style.animation = "fillDeleteCircle 1s linear forwards";
     conversations.splice(index, 1);
   }
 
-  if (selectedConversation && selectedConversation.id === conversation.id) {
-    selectedConversation = conversations[0] || null;
-    if (selectedConversation) {
-      await loadMessages();
+  if (conversationSelectionnee && conversationSelectionnee.id === conversation.id) {
+    conversationSelectionnee = conversations[0] || null;
+    if (conversationSelectionnee) {
+      await chargerMessages();
     }
   }
 
-  renderConversationList();
-  renderMessages();
+  rendreListeConversations();
+  rendreMessages();
 }, 1000);
 };
 
-    deleteBtn.onmouseup = function (event) {
+    boutonSupprimer.onmouseup = function (event) {
       event.stopPropagation();
-      clearTimeout(deleteTimer);
+      clearTimeout(minuterieSuppression);
 
-      if (progressCircle) {
-        progressCircle.remove();
-        progressCircle = null;
+      if (cercleProgres) {
+        cercleProgres.remove();
+        cercleProgres = null;
       }
     };
 
-    deleteBtn.onclick = function (event) {
+    boutonSupprimer.onclick = function (event) {
       event.stopPropagation();
     };
 
     item.onclick = function () {
-      selectedConversation = conversation;
-      renderConversationList();
-      renderMessages();
-      loadMessages();
+      conversationSelectionnee = conversation;
+      rendreListeConversations();
+      rendreMessages();
+      chargerMessages();
     };
 
-    item.appendChild(title);
-    item.appendChild(deleteBtn);
+    item.appendChild(titre);
+    item.appendChild(boutonSupprimer);
     conversationsColumn.appendChild(item);
   });
 }
 
-async function loadMessages() {
+async function chargerMessages() {
   try {
-    if (!selectedConversation) return;
+    if (!conversationSelectionnee) return;
 
-const res = await fetch(`http://localhost:3000/api/messages/${selectedConversation.id}`, {
+const res = await fetch(`http://localhost:3000/api/messages/${conversationSelectionnee.id}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem("token")}`
       }
@@ -352,38 +353,38 @@ const res = await fetch(`http://localhost:3000/api/messages/${selectedConversati
       throw new Error("Erreur serveur: " + res.status);
     }
 
-    const data = await res.json();
+    const donnees = await res.json();
 
-    selectedConversation.messages = [];
+    conversationSelectionnee.messages = [];
 
-    data.forEach(msg => {
-      selectedConversation.messages.push(new Message("user", msg.prompt));
-      selectedConversation.messages.push(new Message("ai", msg.response));
+    donnees.forEach(msg => {
+      conversationSelectionnee.messages.push(new Message("user", msg.invite || msg.prompt));
+      conversationSelectionnee.messages.push(new Message("ai", msg.reponse || msg.response));
     });
 
-    selectedConversation.updatedAt = Date.now();
-    renderMessages();
+    conversationSelectionnee.misAJourLe = Date.now();
+    rendreMessages();
 
   } catch (error) {
-    console.error("Erreur loadMessages:", error);
+    console.error("Erreur chargerMessages:", error);
   }
 }
 
 button.addEventListener("click", async () => {
-  const text = input.value.trim();
-  if (text === "") return;
+  const texte = input.value.trim();
+  if (texte === "" || !conversationSelectionnee) return;
 
-  selectedConversation.messages.push(new Message("user", text));
-  moveConversationToTop(selectedConversation);
-  renderMessages();
+  conversationSelectionnee.messages.push(new Message("user", texte));
+  deplacerConversationEnHaut(conversationSelectionnee);
+  rendreMessages();
 
-  const response = await envoieQuestion(text, getCurrentConversationId());
+  const reponse = await envoieQuestion(texte, obtenirIdConversationCourante());
 
-  selectedConversation.messages.push(new Message("ai", response));
-  moveConversationToTop(selectedConversation);
-  renderMessages();
+  conversationSelectionnee.messages.push(new Message("ai", reponse));
+  deplacerConversationEnHaut(conversationSelectionnee);
+  rendreMessages();
 
   input.value = "";
 });
 
-loadConversations();
+chargerConversations();
