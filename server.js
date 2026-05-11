@@ -27,88 +27,88 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Atlas connecté"))
   .catch(err => console.error("Erreur MongoDB :", err));
 
-const userSchema = new mongoose.Schema({
-  username: { type: String, unique: true },
-  password: String
+const schemaUtilisateur = new mongoose.Schema({
+  nomUtilisateur: { type: String, unique: true },
+  motDePasse: String
 });
 
-const User = mongoose.model('User', userSchema);
+const Utilisateur = mongoose.model('Utilisateur', schemaUtilisateur);
 
-const SECRET = process.env.JWT_SECRET;
+const CLE_SECRETE = process.env.JWT_SECRET;
 
-const conversationSchema = new mongoose.Schema({
-  userId: String,
-  title: String,
-  updatedAt: {
+const schemaConversation = new mongoose.Schema({
+  idUtilisateur: String,
+  titre: String,
+  misAJourLe: {
     type: Date,
     default: Date.now
   }
 });
 
-const Conversation = mongoose.model('Conversation', conversationSchema);
+const Conversation = mongoose.model('Conversation', schemaConversation);
 
-const messageSchema = new mongoose.Schema({
-  userId: String,
-  conversationId: String,
-  prompt: String,
-  response: String,
-  createdAt: {
+const schemaMessage = new mongoose.Schema({
+  idUtilisateur: String,
+  idConversation: String,
+  invite: String,
+  reponse: String,
+  creeLe: {
     type: Date,
     default: Date.now
   }
 });
 
-const Message = mongoose.model('Message', messageSchema);
+const Message = mongoose.model('Message', schemaMessage);
 
-const API_KEY = process.env.OPENROUTER_API_KEY;
-console.log("OpenRouter key loaded:", API_KEY ? API_KEY.slice(0, 12) + "..." : "NO");
-console.log("OpenRouter key length:", API_KEY ? API_KEY.length : 0);
+const CLE_API = process.env.OPENROUTER_API_KEY;
+console.log("Clé OpenRouter chargée:", CLE_API ? CLE_API.slice(0, 12) + "..." : "NON");
+console.log("Longueur clé OpenRouter:", CLE_API ? CLE_API.length : 0);
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const MODELS = [
+const MODELES = [
   "meta-llama/llama-3.1-8b-instruct",
   "mistralai/mistral-7b-instruct",
   "google/gemma-2-9b-it"
 ];
 
-async function askModel(model, prompt) {
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+async function demanderModele(modele, invite) {
+  const reponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${API_KEY}`,
+      "Authorization": `Bearer ${CLE_API}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model,
-      messages: [{ role: "user", content: prompt }]
+      model: modele,
+      messages: [{ role: "user", content: invite }]
     })
   });
 
-  const data = await response.json();
+  const donnees = await reponse.json();
 
   return {
-    model,
-    answer: response.ok
-      ? data?.choices?.[0]?.message?.content || "Aucune réponse reçue."
-      : `Erreur: ${data?.error?.message || "erreur inconnue"}`
+    model: modele,
+    answer: reponse.ok
+      ? donnees?.choices?.[0]?.message?.content || "Aucune réponse reçue."
+      : `Erreur: ${donnees?.error?.message || "erreur inconnue"}`
   };
 }
 
-async function compareAnswers(prompt, answers) {
-const comparisonPrompt = `
+async function comparerReponses(invite, reponses) {
+const inviteComparaison = `
 Question:
-${prompt}
+${invite}
 
-Réponse 1 (${answers[0].model}):
-${answers[0].answer}
+Réponse 1 (${reponses[0].model}):
+${reponses[0].answer}
 
-Réponse 2 (${answers[1].model}):
-${answers[1].answer}
+Réponse 2 (${reponses[1].model}):
+${reponses[1].answer}
 
-Réponse 3 (${answers[2].model}):
-${answers[2].answer}
+Réponse 3 (${reponses[2].model}):
+${reponses[2].answer}
 
 Choisis la meilleure réponse.
 
@@ -116,72 +116,72 @@ IMPORTANT:
 - Réponds STRICTEMENT en JSON
 - Format attendu:
 {
-  "best_model": "nom_du_model",
-  "best_answer": "texte_de_la_meilleure_réponse"
+  "meilleurModele": "nom_du_modele",
+  "meilleureReponse": "texte_de_la_meilleure_reponse"
 }
 
 Même si les réponses sont équivalentes, choisis-en une.
 `;
 
-  const judge = await askModel("meta-llama/llama-3.1-8b-instruct", comparisonPrompt);
-  return judge.answer;
+  const juge = await demanderModele("openrouter/auto", inviteComparaison);
+  return juge.answer;
 }
 
 app.get('/', (req, res) => {
   console.log("GET /");
-  res.send('Server OK');
+  res.send('Serveur OK');
 });
 
-app.post('/api/register', async (req, res) => {
-  console.log("REGISTER HIT");
-  const { username, password } = req.body;
+app.post('/api/inscription', async (req, res) => {
+  console.log("INSCRIPTION RECUE");
+  const { nomUtilisateur, motDePasse } = req.body;
 
   try {
-    const hashed = await bcrypt.hash(password, 10);
+    const hache = await bcrypt.hash(motDePasse, 10);
 
-    const user = await User.create({
-      username,
-      password: hashed
+    const utilisateur = await Utilisateur.create({
+      nomUtilisateur,
+      motDePasse: hache
     });
 
-    res.json({ message: "User created" });
+    res.json({ message: "Utilisateur créé" });
 
   } catch (err) {
     res.status(400).json({ error: "Nom d'utilisateur déjà utilisé" });
   }
 });
 
-app.post('/api/login', async (req, res) => {
-  const { username, password } = req.body;
+app.post('/api/connexion', async (req, res) => {
+  const { nomUtilisateur, motDePasse } = req.body;
 
-  const user = await User.findOne({ username });
-  if (!user) return res.status(400).json({ error: "Utilisateur non trouvé" });
+  const utilisateur = await Utilisateur.findOne({ nomUtilisateur });
+  if (!utilisateur) return res.status(400).json({ error: "Utilisateur non trouvé" });
 
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return res.status(400).json({ error: "Mot de passe incorrect" });
+  const valide = await bcrypt.compare(motDePasse, utilisateur.motDePasse);
+  if (!valide) return res.status(400).json({ error: "Mot de passe incorrect" });
 
-  const token = jwt.sign({ userId: user._id }, SECRET);
+  const jeton = jwt.sign({ idUtilisateur: utilisateur._id }, CLE_SECRETE);
 
-  res.json({ token });
+  res.json({ token: jeton });
 });
 
-function verifyToken(req, res, next) {
+function verifierJeton(req, res, next) {
   const auth = req.headers.authorization;
-  if (!auth) return res.status(401).send("No token");
+  if (!auth) return res.status(401).send("Aucun jeton");
 
   try {
-    const decoded = jwt.verify(auth.split(" ")[1], SECRET);
-    req.userId = decoded.userId;
+    const decode = jwt.verify(auth.split(" ")[1], CLE_SECRETE);
+    req.idUtilisateur = decode.idUtilisateur;
     next();
   } catch {
-    res.status(401).send("Invalid token");
+    res.status(401).send("Jeton invalide");
   }
 }
 
-app.get('/api/conversations', verifyToken, async (req, res) => {
+app.get('/api/conversations', verifierJeton, async (req, res) => {
   try {
-    const conversations = await Conversation.find({ userId: req.userId })
-      .sort({ updatedAt: -1 });
+    const conversations = await Conversation.find({ idUtilisateur: req.idUtilisateur })
+      .sort({ misAJourLe: -1 });
 
     res.json(conversations);
   } catch (error) {
@@ -189,14 +189,14 @@ app.get('/api/conversations', verifyToken, async (req, res) => {
   }
 });
 
-app.post('/api/conversations', verifyToken, async (req, res) => {
+app.post('/api/conversations', verifierJeton, async (req, res) => {
   try {
-    const { title } = req.body;
+    const { titre } = req.body;
 
     const conversation = await Conversation.create({
-      userId: req.userId,
-      title: title || "New Chat",
-      updatedAt: new Date()
+      idUtilisateur: req.idUtilisateur,
+      titre: titre || "Nouveau Chat",
+      misAJourLe: new Date()
     });
 
     res.json(conversation);
@@ -205,13 +205,13 @@ app.post('/api/conversations', verifyToken, async (req, res) => {
   }
 });
 
-app.patch('/api/conversations/:id', verifyToken, async (req, res) => {
+app.patch('/api/conversations/:id', verifierJeton, async (req, res) => {
   try {
-    const { title } = req.body;
+    const { titre } = req.body;
 
     const conversation = await Conversation.findOneAndUpdate(
-      { _id: req.params.id, userId: req.userId },
-      { title, updatedAt: new Date() },
+      { _id: req.params.id, idUtilisateur: req.idUtilisateur },
+      { titre, misAJourLe: new Date() },
       { new: true }
     );
 
@@ -221,61 +221,61 @@ app.patch('/api/conversations/:id', verifyToken, async (req, res) => {
   }
 });
 
-app.delete('/api/conversations/:id', verifyToken, async (req, res) => {
+app.delete('/api/conversations/:id', verifierJeton, async (req, res) => {
   try {
     await Conversation.deleteOne({
       _id: req.params.id,
-      userId: req.userId
+      idUtilisateur: req.idUtilisateur
     });
 await Message.deleteMany({
-  conversationId: req.params.id,
-  userId: req.userId
+  idConversation: req.params.id,
+  idUtilisateur: req.idUtilisateur
 });
-    res.json({ message: "Conversation deleted" });
+    res.json({ message: "Conversation supprimée" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-app.post('/api/generate', verifyToken, async (req, res) => {
-  const { prompt, conversationId } = req.body;
-  const userId = req.userId;
+app.post('/api/generer', verifierJeton, async (req, res) => {
+  const { invite, idConversation } = req.body;
+  const idUtilisateur = req.idUtilisateur;
 
-  console.log("Question reçue :", prompt);
-  console.log("conversationId reçu :", conversationId);
+  console.log("Question reçue :", invite);
+  console.log("idConversation reçu :", idConversation);
 
   try {
-    const answers = await Promise.all(
-      MODELS.map(model => askModel(model, prompt))
+    const reponses = await Promise.all(
+      MODELES.map(modele => demanderModele(modele, invite))
     );
 
-const rawComparison = await compareAnswers(prompt, answers);
-console.log("RAW COMPARISON:", rawComparison);
-let best;
+const comparaisonBrute = await comparerReponses(invite, reponses);
+
+let meilleur;
 try {
-  best = JSON.parse(rawComparison);
+  meilleur = JSON.parse(comparaisonBrute);
 } catch {
-  console.log("Erreur parsing JSON:", rawComparison);
-  best = {
-    best_model: answers[0].model,
-    best_answer: answers[0].answer
+  console.log("Erreur parsing JSON:", comparaisonBrute);
+  meilleur = {
+    meilleurModele: reponses[0].model,
+    meilleureReponse: reponses[0].answer
   };
 }
 
-const content = `
-Meilleure réponse (${best.best_model}):
+const contenu = `
+Meilleure réponse (${meilleur.meilleurModele}):
 
-${best.best_answer}
+${meilleur.meilleureReponse}
 `;
 
     await Message.create({
-      userId,
-      conversationId,
-      prompt,
-      response: content
+      idUtilisateur,
+      idConversation,
+      invite,
+      reponse: contenu
     });
 
-    res.json({ response: content });
+    res.json({ response: contenu });
 
   } catch (error) {
     console.error("Erreur serveur :", error);
@@ -285,12 +285,12 @@ ${best.best_answer}
   }
 });
 
-app.get('/api/messages/:conversationId', verifyToken, async (req, res) => {
+app.get('/api/messages/:idConversation', verifierJeton, async (req, res) => {
   try {
     const messages = await Message.find({
-      userId: req.userId,
-      conversationId: req.params.conversationId
-    }).sort({ createdAt: 1 });
+      idUtilisateur: req.idUtilisateur,
+      idConversation: req.params.idConversation
+    }).sort({ creeLe: 1 });
 
     res.json(messages);
   } catch (error) {
