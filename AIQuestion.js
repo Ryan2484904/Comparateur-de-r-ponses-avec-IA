@@ -1,15 +1,15 @@
-async function envoieQuestion(contenu, conversationId){
+async function envoieQuestion(contenu, idConversation){
     try{
-        const reponse = await fetch('http://localhost:3000/api/generate', {
+        const reponse = await fetch('http://localhost:3000/api/generer', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem("token")}`
             },
            body: JSON.stringify({ 
-  prompt: contenu,
-  conversationId: conversationId
-})
+           invite: contenu,
+           idConversation: idConversation
+           })
         });
 
         const reponseIA = await reponse.json();
