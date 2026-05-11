@@ -1,39 +1,39 @@
-async function login() {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+async function connexion() {
+    const nomUtilisateur = document.getElementById("username").value;
+    const motDePasse = document.getElementById("password").value;
 
-    const res = await fetch('http://localhost:3000/api/login', {
+    const res = await fetch('http://localhost:3000/api/connexion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ nomUtilisateur, motDePasse })
     });
 
-    const data = await res.json();
+    const donnees = await res.json();
 
     if (!res.ok) {
-        document.getElementById("error").textContent = data.error || "Échec de la connexion";
+        document.getElementById("error").textContent = donnees.error || "Échec de la connexion";
         return;
     }
 
-    localStorage.setItem("token", data.token);
+    localStorage.setItem("token", donnees.token);
 
-    window.location.href = "structure.html";
+    window.location.href = "Interface.html";
 }
 
-async function register() {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+async function inscription() {
+    const nomUtilisateur = document.getElementById("username").value;
+    const motDePasse = document.getElementById("password").value;
 
-    const res = await fetch('http://localhost:3000/api/register', {
+    const res = await fetch('http://localhost:3000/api/inscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ nomUtilisateur, motDePasse })
     });
 
-    const data = await res.json();
+    const donnees = await res.json();
 
     if (!res.ok) {
-        document.getElementById("error").textContent = data.error || "Échec de l'inscription";
+        document.getElementById("error").textContent = donnees.error || "Échec de l'inscription";
         return;
     }
 
