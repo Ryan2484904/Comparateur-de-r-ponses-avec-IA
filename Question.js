@@ -31,13 +31,11 @@ class Message {
 }
 /**
  * Représente une conversation utilisateur.
- *
  * Une conversation contient :
- * - un identifiant unique
- * - un titre
- * - une liste de messages
- * - une date de dernière modification
- *
+ * un identifiant unique
+ * un titre
+ * une liste de messages
+ * une date de dernière modification
  * @class
  */
 class Conversation {
@@ -55,9 +53,9 @@ let conversations = [
   new Conversation(3, "Chat 3")
 ];
 
-let selectedConversation = conversations[0];
-function getCurrentConversationId() {
-  return selectedConversation.id;
+let conversationSelectionnee = conversations[0];
+function obtenirIdConversationCourante() {
+  return conversationSelectionnee.id;
 }
 let nextConversationId = 4;
 
@@ -66,17 +64,18 @@ const button = document.querySelector(".send-button");
 const messagesArea = document.querySelector(".messages-area");
 const conversationsColumn = document.querySelector(".conversations-column");
 
-function sortConversations() {
-  conversations.sort((a, b) => b.updatedAt - a.updatedAt);
+function trierConversations() {
+  conversations.sort((a, b) => b.misAJourLe - a.misAJourLe);
 }
 
-function moveConversationToTop(conversation) {
-  conversation.updatedAt = Date.now();
-  sortConversations();
-  renderConversationList();
+function deplacerConversationEnHaut(conversation) {
+  if (!conversation) return;
+  conversation.misAJourLe = Date.now();
+  trierConversations();
+  rendreListeConversations();
 }
 
-function renderMessages() {
+function rendreMessages() {
   messagesArea.innerHTML = "";
 
   if (!conversationSelectionnee) return;
@@ -99,7 +98,7 @@ function renderMessages() {
     messagesArea.appendChild(divMessage);
   });
 }
-async function loadConversations() {
+async function chargerConversations() {
   try {
     const res = await fetch("http://localhost:3000/api/conversations", {
       headers: {
@@ -133,9 +132,9 @@ if (conversationSelectionnee) {
     console.error("Erreur chargerConversations:", error);
   }
 }
-function createChatButton() {
-  const addButton = document.createElement("div");
-  addButton.textContent = "+ Chat";
+function creerBoutonChat() {
+  const boutonAjouter = document.createElement("div");
+  boutonAjouter.textContent = "+ Chat";
 
   boutonAjouter.className = "bg-white rounded";
   boutonAjouter.style.padding = "15px";
@@ -173,7 +172,7 @@ function createChatButton() {
   conversationsColumn.appendChild(boutonAjouter);
 }
 
-function renderConversationList() {
+function rendreListeConversations() {
   conversationsColumn.innerHTML = "";
 
   creerBoutonChat();
@@ -371,7 +370,7 @@ saisie.onblur = () => {
   });
 }
 
-async function loadMessages() {
+async function chargerMessages() {
   try {
     if (!conversationSelectionnee) return;
 
@@ -401,16 +400,6 @@ const res = await fetch(`http://localhost:3000/api/messages/${conversationSelect
     console.error("Erreur chargerMessages:", error);
   }
 }
-
-/**
- * Gère l’envoi d’un message utilisateur.
- *
- * Cette fonction :
- * - récupère le texte utilisateur
- * - affiche le message
- * - envoie la question à l’IA
- * - affiche la réponse IA
- */
 
 button.addEventListener("click", async () => {
   const texte = input.value.trim();
