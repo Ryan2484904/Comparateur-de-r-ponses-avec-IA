@@ -1,6 +1,6 @@
-async function login() {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+async function connexion() {
+    const nomUtilisateur = document.getElementById("username").value;
+    const motDePasse = document.getElementById("password").value;
 
     const res = await fetch('http://localhost:3000/api/connexion', {
         method: 'POST',
@@ -20,9 +20,9 @@ async function login() {
     window.location.href = "structure.html";
 }
 
-async function register() {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+async function inscription() {
+    const nomUtilisateur = document.getElementById("username").value;
+    const motDePasse = document.getElementById("password").value;
 
     const res = await fetch('http://localhost:3000/api/inscription', {
         method: 'POST',
