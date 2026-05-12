@@ -1,37 +1,102 @@
-# Comparateur-de-r-ponses-avec-IA
+# Comparateur-de-réponses-avec-IA
+
 <img width="1662" height="482" alt="Gantt" src="https://github.com/user-attachments/assets/76e58056-cc10-4456-bd8a-c451d61c8415" />
+
 <img width="850" height="662" alt="UML" src="https://github.com/user-attachments/assets/fdb0ee33-ef46-4d88-9b44-3251ac3aaefd" />
 
-**Description du projet**
+---
 
-Comparaison IA est un website innovant qui permet de poser une question — en texte ou à partir d’une image — et d’obtenir des réponses provenant de plusieurs intelligences artificielles simultanément.
+# Description du projet
 
-L’application intègre une IA comparatrice capable d’analyser automatiquement les réponses générées. Elle regroupe les informations similaires, met en évidence les différences, et identifie clairement la source de chaque réponse ainsi que l’intelligence artificielle utilisée.
+Comparateur de réponses avec IA est une application web permettant de poser une question et d’obtenir plusieurs réponses générées par différentes intelligences artificielles simultanément.
 
- les IA peuvent fournir des réponses différentes à une même question, ce qui rend difficile pour l’utilisateur de juger leur fiabilité. Le but de l'AI est de centraliser et de comparer ces réponses.
+L’application utilise ensuite une IA comparatrice afin d’analyser automatiquement les réponses obtenues et sélectionner la meilleure réponse selon sa qualité, sa précision et sa pertinence.
 
-Grâce à une interface simple et intuitive, l’utilisateur peut rapidement analyser plusieurs points de vue et prendre une décision plus éclairée.
+Le projet vise à faciliter la comparaison des intelligences artificielles modernes tout en aidant l’utilisateur à obtenir une réponse plus fiable et structurée.
 
- **Objectif**
+---
 
-Offrir un outil unique permettant de comparer efficacement les réponses de différentes intelligences artificielles afin d’améliorer la compréhension et la fiabilité de l’information.
+# Objectifs
 
- Fonctionnalités principales
+- Comparer plusieurs modèles d’intelligence artificielle
+- Centraliser les réponses dans une seule interface
+- Identifier automatiquement la meilleure réponse
+- Faciliter l’analyse critique des réponses générées
+- Développer une plateforme simple et intuitive
 
-Interrogation de plusieurs IA en parallèle
+---
 
-Analyse automatique des réponses par une IA comparatrice
+# Fonctionnalités principales
 
-Regroupement des réponses similaires
+## Système multi-IA
 
-Identification claire des sources et modèles d’IA
+L’application interroge plusieurs modèles IA simultanément :
 
-**Valeur ajoutée**
+- Llama 3.1
+- Mistral 7B
+- Gemma 2
 
-Évite de naviguer entre plusieurs plateformes d’IA
+Une IA comparatrice analyse ensuite les réponses et choisit automatiquement la meilleure.
 
-Réduit les risques de désinformation
+---
 
-Facilite la comparaison rapide et structurée des réponses
+## Gestion des conversations
 
-Aide à développer l’esprit critique
+- Création dynamique de conversations
+- Suppression des conversations
+- Renommage des conversations par double clic
+- Réorganisation automatique des conversations récentes
+- Sauvegarde des conversations dans MongoDB Atlas
+
+---
+
+## Interface utilisateur
+
+- Interface moderne avec Bootstrap 5
+- Messages utilisateur affichés à droite
+- Réponses IA affichées à gauche
+- Gestion dynamique des chats
+- Bouton d’ajout de conversation
+- Suppression des conversations avec maintien du bouton X
+
+---
+
+## Authentification
+
+- Création de compte
+- Connexion utilisateur
+- Authentification JWT
+- Protection des routes API
+
+---
+
+# Technologies utilisées
+
+## Frontend
+
+- HTML
+- CSS
+- JavaScript
+- Bootstrap 5
+
+## Backend
+
+- Node.js
+- Express.js
+
+## Base de données
+
+- MongoDB Atlas
+- Mongoose
+
+## API IA
+
+- OpenRouter API
+
+---
+
+# Installation du projet
+
+## 1. Cloner le projet
+
+https://github.com/Ryan2484904/Comparateur-de-r-ponses-avec-IA

@@ -1,12 +1,45 @@
-import { envoieQuestion } from "./AIQuestion.js";
+/**
+ * Fichier principal du frontend.
+ *
+ * Ce fichier gère :
+ * - les conversations
+ * - les messages
+ * - l’affichage dynamique
+ * - la communication avec le backend
+ * - la gestion des chats
+ * - l’interface utilisateur
+ *
+ * @author Tianlang Xu
+ * @author Ryan Quoch
+ */
 
+import { envoieQuestion } from "./AIQuestion.js";
+/**
+ * Représente un message dans une conversation.
+ *
+ * Un message peut provenir :
+ * - de l’utilisateur
+ * - d’une intelligence artificielle
+ *
+ * @class
+ */
 class Message {
   constructor(sender, text) {
     this.sender = sender;
     this.text = text;
   }
 }
-
+/**
+ * Représente une conversation utilisateur.
+ *
+ * Une conversation contient :
+ * - un identifiant unique
+ * - un titre
+ * - une liste de messages
+ * - une date de dernière modification
+ *
+ * @class
+ */
 class Conversation {
   constructor(id, title, messages = []) {
     this.id = id;
@@ -23,6 +56,13 @@ let conversations = [
 ];
 
 let selectedConversation = conversations[0];
+
+/**
+ * Retourne l’identifiant de la conversation active.
+ *
+ * @returns {string|number} ID de la conversation sélectionnée.
+ */
+
 function getCurrentConversationId() {
   return selectedConversation.id;
 }
@@ -33,15 +73,35 @@ const button = document.querySelector(".send-button");
 const messagesArea = document.querySelector(".messages-area");
 const conversationsColumn = document.querySelector(".conversations-column");
 
+/**
+ * Trie les conversations par date de modification.
+ *
+ * Les conversations les plus récentes
+ * apparaissent en premier.
+ */
+
 function sortConversations() {
   conversations.sort((a, b) => b.updatedAt - a.updatedAt);
 }
+
+/**
+ * Déplace une conversation en haut de la liste.
+ *
+ * @param {Conversation} conversation - Conversation à déplacer.
+ */
 
 function moveConversationToTop(conversation) {
   conversation.updatedAt = Date.now();
   sortConversations();
   renderConversationList();
 }
+
+/**
+ * Affiche les messages de la conversation active.
+ *
+ * Les messages utilisateur apparaissent à droite.
+ * Les réponses IA apparaissent à gauche.
+ */
 
 function renderMessages() {
   messagesArea.innerHTML = "";
@@ -66,6 +126,14 @@ function renderMessages() {
     messagesArea.appendChild(messageDiv);
   });
 }
+
+/**
+ * Charge les conversations depuis MongoDB.
+ *
+ * @async
+ * @returns {Promise<void>}
+ */
+
 async function loadConversations() {
   try {
     const res = await fetch("http://localhost:3000/api/conversations", {
@@ -100,6 +168,11 @@ if (selectedConversation) {
     console.error("Erreur loadConversations:", error);
   }
 }
+
+/**
+ * Crée le bouton permettant d’ajouter une conversation.
+ */
+
 function createChatButton() {
   const addButton = document.createElement("div");
   addButton.textContent = "+ Chat";
@@ -139,6 +212,16 @@ function createChatButton() {
 
   conversationsColumn.appendChild(addButton);
 }
+
+/**
+ * Affiche la liste des conversations utilisateur.
+ *
+ * Cette fonction gère :
+ * - l’affichage des chats
+ * - le renommage
+ * - la suppression
+ * - la sélection des conversations
+ */
 
 function renderConversationList() {
   conversationsColumn.innerHTML = "";
@@ -338,6 +421,13 @@ progressCircle.style.animation = "fillDeleteCircle 1s linear forwards";
   });
 }
 
+/**
+ * Charge les messages de la conversation sélectionnée.
+ *
+ * @async
+ * @returns {Promise<void>}
+ */
+
 async function loadMessages() {
   try {
     if (!selectedConversation) return;
@@ -368,6 +458,16 @@ const res = await fetch(`http://localhost:3000/api/messages/${selectedConversati
     console.error("Erreur loadMessages:", error);
   }
 }
+
+/**
+ * Gère l’envoi d’un message utilisateur.
+ *
+ * Cette fonction :
+ * - récupère le texte utilisateur
+ * - affiche le message
+ * - envoie la question à l’IA
+ * - affiche la réponse IA
+ */
 
 button.addEventListener("click", async () => {
   const text = input.value.trim();

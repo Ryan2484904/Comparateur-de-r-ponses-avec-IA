@@ -27,6 +27,15 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Atlas connecté"))
   .catch(err => console.error("Erreur MongoDB :", err));
 
+
+/**
+ * Schéma MongoDB représentant les utilisateurs.
+ *
+ * Chaque utilisateur possède :
+ * - un nom d’utilisateur unique
+ * - un mot de passe chiffré
+ */
+
 const userSchema = new mongoose.Schema({
   username: { type: String, unique: true },
   password: String
@@ -35,6 +44,15 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 const SECRET = process.env.JWT_SECRET;
+
+/**
+ * Schéma MongoDB représentant une conversation.
+ *
+ * Une conversation contient :
+ * - un utilisateur propriétaire
+ * - un titre
+ * - une date de modification
+ */
 
 const conversationSchema = new mongoose.Schema({
   userId: String,
@@ -46,6 +64,17 @@ const conversationSchema = new mongoose.Schema({
 });
 
 const Conversation = mongoose.model('Conversation', conversationSchema);
+
+/**
+ * Schéma MongoDB représentant un message.
+ *
+ * Chaque message contient :
+ * - un utilisateur
+ * - une conversation
+ * - une question utilisateur
+ * - une réponse IA
+ * - une date de création
+ */
 
 const messageSchema = new mongoose.Schema({
   userId: String,
@@ -73,6 +102,15 @@ const MODELS = [
   "google/gemma-2-9b-it"
 ];
 
+/**
+ * Envoie une question à un modèle IA via OpenRouter.
+ *
+ * @async
+ * @param {string} model - Nom du modèle IA.
+ * @param {string} prompt - Question de l’utilisateur.
+ * @returns {Promise<string>} Réponse générée par l’IA.
+ */
+
 async function askModel(model, prompt) {
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
@@ -95,6 +133,16 @@ async function askModel(model, prompt) {
       : `Erreur: ${data?.error?.message || "erreur inconnue"}`
   };
 }
+
+/**
+ * Compare les réponses générées par plusieurs IA
+ * afin de sélectionner la meilleure réponse.
+ *
+ * @async
+ * @param {string} prompt - Question originale.
+ * @param {Array<Object>} answers - Tableau contenant les réponses IA.
+ * @returns {Promise<string>} Réponse finale choisie.
+ */
 
 async function compareAnswers(prompt, answers) {
 const comparisonPrompt = `
@@ -132,6 +180,15 @@ app.get('/', (req, res) => {
   res.send('Server OK');
 });
 
+/**
+ * Route API permettant la création d’un compte utilisateur.
+ *
+ * Cette route :
+ * - reçoit les informations utilisateur
+ * - chiffre le mot de passe
+ * - crée un utilisateur MongoDB
+ */
+
 app.post('/api/register', async (req, res) => {
   console.log("REGISTER HIT");
   const { username, password } = req.body;
@@ -151,6 +208,15 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
+/**
+ * Route API permettant la connexion utilisateur.
+ *
+ * Cette route :
+ * - vérifie les identifiants
+ * - génère un token JWT
+ * - retourne le token au frontend
+ */
+
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
 
@@ -165,6 +231,17 @@ app.post('/api/login', async (req, res) => {
   res.json({ token });
 });
 
+/**
+ * Vérifie le token JWT de l’utilisateur.
+ *
+ * Cette fonction protège les routes privées
+ * et identifie l’utilisateur connecté.
+ *
+ * @param {Object} req - Requête Express.
+ * @param {Object} res - Réponse Express.
+ * @param {Function} next - Fonction middleware suivante.
+ */
+
 function verifyToken(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth) return res.status(401).send("No token");
@@ -178,6 +255,10 @@ function verifyToken(req, res, next) {
   }
 }
 
+/**
+ * Route API retournant les conversations utilisateur.
+ */
+
 app.get('/api/conversations', verifyToken, async (req, res) => {
   try {
     const conversations = await Conversation.find({ userId: req.userId })
@@ -188,6 +269,10 @@ app.get('/api/conversations', verifyToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+/**
+ * Route API permettant la création d’une conversation.
+ */
 
 app.post('/api/conversations', verifyToken, async (req, res) => {
   try {
@@ -205,6 +290,10 @@ app.post('/api/conversations', verifyToken, async (req, res) => {
   }
 });
 
+/**
+ * Route API permettant de modifier le titre d’une conversation.
+ */
+
 app.patch('/api/conversations/:id', verifyToken, async (req, res) => {
   try {
     const { title } = req.body;
@@ -221,6 +310,14 @@ app.patch('/api/conversations/:id', verifyToken, async (req, res) => {
   }
 });
 
+/**
+ * Route API permettant de supprimer une conversation.
+ *
+ * Cette route supprime :
+ * - la conversation
+ * - tous les messages associés
+ */
+
 app.delete('/api/conversations/:id', verifyToken, async (req, res) => {
   try {
     await Conversation.deleteOne({
@@ -236,6 +333,16 @@ await Message.deleteMany({
     res.status(500).json({ error: error.message });
   }
 });
+
+/**
+ * Route API permettant de générer une réponse IA.
+ *
+ * Fonctionnement :
+ * 1. Reçoit la question utilisateur
+ * 2. Interroge plusieurs IA
+ * 3. Compare les réponses
+ * 4. Retourne la meilleure réponse
+ */
 
 app.post('/api/generate', verifyToken, async (req, res) => {
   const { prompt, conversationId } = req.body;
@@ -285,6 +392,11 @@ ${best.best_answer}
   }
 });
 
+/**
+ * Route API permettant de récupérer les messages
+ * d’une conversation spécifique.
+ */
+
 app.get('/api/messages/:conversationId', verifyToken, async (req, res) => {
   try {
     const messages = await Message.find({
@@ -298,9 +410,20 @@ app.get('/api/messages/:conversationId', verifyToken, async (req, res) => {
   }
 });
 
+/**
+ * Démarrage du serveur Express.
+ *
+ * Le serveur écoute sur le port 3000.
+ */
+
 const server = app.listen(3000, () => {
   console.log("Serveur en cours d'exécution sur le port 3000");
 });
+
+/**
+ * Affiche un message heartbeat régulièrement
+ * afin de confirmer que le serveur fonctionne.
+ */
 
 setInterval(() => {
   console.log("heartbeat");
