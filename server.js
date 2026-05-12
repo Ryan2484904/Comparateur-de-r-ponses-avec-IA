@@ -9,106 +9,139 @@
  * - la communication avec OpenRouter
  * - le système multi-IA
  * - la comparaison des réponses IA
- *
- * @author Tianlang Xu
- * @author Ryan Quoch
  */
 
+const cadreExpress = require("express");
+const gestionCors = require("cors");
+const mangouste = require("mongoose");
+require("dotenv").config();
 
-const express = require('express');
-const cors = require('cors');
-const mongoose = require('mongoose');
-require('dotenv').config();
+const chiffrement = require("bcrypt");
+const jetonWeb = require("jsonwebtoken");
 
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const application = cadreExpress();
 
-mongoose.connect(process.env.MONGO_URI)
+application.use(gestionCors());
+application.use(cadreExpress.json());
+
+const cleSecrete = process.env.JWT_SECRET;
+const cleApi = process.env.OPENROUTER_API_KEY;
+
+const port = 3000;
+
+mangouste
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Atlas connecté"))
-  .catch(err => console.error("Erreur MongoDB :", err));
+  .catch((erreur) => console.error("Erreur MongoDB :", erreur));
 
-const userSchema = new mongoose.Schema({
-  username: { type: String, unique: true },
-  password: String
+const schemaUtilisateur = new mangouste.Schema({
+  nomUtilisateur: {
+    type: String,
+    unique: true,
+    required: true
+  },
+  motDePasse: {
+    type: String,
+    required: true
+  }
 });
 
-const Utilisateur = mongoose.model('Utilisateur', schemaUtilisateur);
+const Utilisateur = mangouste.model("Utilisateur", schemaUtilisateur);
 
-const CLE_SECRETE = process.env.JWT_SECRET;
-
-const conversationSchema = new mongoose.Schema({
-  userId: String,
-  title: String,
-  updatedAt: {
+const schemaConversation = new mangouste.Schema({
+  idUtilisateur: {
+    type: String,
+    required: true
+  },
+  titre: {
+    type: String,
+    default: "Nouveau Chat"
+  },
+  misAJourLe: {
     type: Date,
     default: Date.now
   }
 });
 
-const Conversation = mongoose.model('Conversation', schemaConversation);
+const Conversation = mangouste.model("Conversation", schemaConversation);
 
-const messageSchema = new mongoose.Schema({
-  userId: String,
-  conversationId: String,
-  prompt: String,
-  response: String,
-  createdAt: {
+const schemaMessage = new mangouste.Schema({
+  idUtilisateur: {
+    type: String,
+    required: true
+  },
+  idConversation: {
+    type: String,
+    required: true
+  },
+  invite: {
+    type: String,
+    required: true
+  },
+  reponse: {
+    type: String,
+    required: true
+  },
+  creeLe: {
     type: Date,
     default: Date.now
   }
 });
 
-const Message = mongoose.model('Message', schemaMessage);
+const Message = mangouste.model("Message", schemaMessage);
 
-const CLE_API = process.env.OPENROUTER_API_KEY;
-console.log("Clé OpenRouter chargée:", CLE_API ? CLE_API.slice(0, 12) + "..." : "NON");
-console.log("Longueur clé OpenRouter:", CLE_API ? CLE_API.length : 0);
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-const MODELES = [
+const modelesIA = [
   "meta-llama/llama-3.1-8b-instruct",
   "mistralai/mistral-7b-instruct",
   "google/gemma-2-9b-it"
 ];
 
-async function askModel(model, prompt) {
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+console.log(
+  "Clé OpenRouter chargée:",
+  cleApi ? cleApi.slice(0, 12) + "..." : "NON"
+);
+
+async function demanderModele(modele, invite) {
+  const reponseApi = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${CLE_API}`,
+      Authorization: `Bearer ${cleApi}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
       model: modele,
-      messages: [{ role: "user", content: invite }]
+      messages: [
+        {
+          role: "user",
+          content: invite
+        }
+      ]
     })
   });
 
-  const donnees = await reponse.json();
+  const donnees = await reponseApi.json();
 
   return {
-    model: modele,
-    answer: reponse.ok
+    modele: modele,
+    reponse: reponseApi.ok
       ? donnees?.choices?.[0]?.message?.content || "Aucune réponse reçue."
       : `Erreur: ${donnees?.error?.message || "erreur inconnue"}`
   };
 }
 
-async function compareAnswers(prompt, answers) {
-const comparisonPrompt = `
+async function comparerReponses(invite, reponses) {
+  const inviteComparaison = `
 Question:
 ${invite}
 
-Réponse 1 (${reponses[0].model}):
-${reponses[0].answer}
+Réponse 1 (${reponses[0].modele}):
+${reponses[0].reponse}
 
-Réponse 2 (${reponses[1].model}):
-${reponses[1].answer}
+Réponse 2 (${reponses[1].modele}):
+${reponses[1].reponse}
 
-Réponse 3 (${reponses[2].model}):
-${reponses[2].answer}
+Réponse 3 (${reponses[2].modele}):
+${reponses[2].reponse}
 
 Choisis la meilleure réponse.
 
@@ -123,196 +156,294 @@ IMPORTANT:
 Même si les réponses sont équivalentes, choisis-en une.
 `;
 
-  const juge = await demanderModele("openrouter/auto", inviteComparaison);
-  return juge.answer;
+  const reponseJuge = await demanderModele("openrouter/auto", inviteComparaison);
+  return reponseJuge.reponse;
 }
 
-app.get('/', (req, res) => {
-  console.log("GET /");
-  res.send('Serveur OK');
-});
+function verifierJeton(req, res, next) {
+  const autorisation = req.headers.authorization;
 
-app.post('/api/register', async (req, res) => {
-  console.log("REGISTER HIT");
-  const { username, password } = req.body;
+  if (!autorisation) {
+    return res.status(401).json({ error: "Aucun jeton fourni" });
+  }
 
   try {
-    const hache = await bcrypt.hash(motDePasse, 10);
+    const jeton = autorisation.split(" ")[1];
+    const donneesDecodees = jetonWeb.verify(jeton, cleSecrete);
 
-    const utilisateur = await Utilisateur.create({
-      nomUtilisateur,
-      motDePasse: hache
+    req.idUtilisateur = donneesDecodees.idUtilisateur;
+    next();
+  } catch (erreur) {
+    return res.status(401).json({ error: "Jeton invalide" });
+  }
+}
+
+application.get("/", (req, res) => {
+  res.send("Serveur OK");
+});
+
+application.post("/api/inscription", async (req, res) => {
+  const nomUtilisateur = req.body.nomUtilisateur || req.body.username;
+  const motDePasse = req.body.motDePasse || req.body.password;
+
+  if (!nomUtilisateur || !motDePasse) {
+    return res.status(400).json({
+      error: "Nom d'utilisateur et mot de passe requis"
+    });
+  }
+
+  try {
+    const motDePasseHache = await chiffrement.hash(motDePasse, 10);
+
+    await Utilisateur.create({
+      nomUtilisateur: nomUtilisateur,
+      motDePasse: motDePasseHache
     });
 
-    res.json({ message: "Utilisateur créé" });
-
-  } catch (err) {
-    res.status(400).json({ error: "Nom d'utilisateur déjà utilisé" });
+    res.json({
+      message: "Utilisateur créé"
+    });
+  } catch (erreur) {
+    res.status(400).json({
+      error: "Nom d'utilisateur déjà utilisé"
+    });
   }
 });
 
-app.post('/api/login', async (req, res) => {
-  const { username, password } = req.body;
+application.post("/api/connexion", async (req, res) => {
+  const nomUtilisateur = req.body.nomUtilisateur || req.body.username;
+  const motDePasse = req.body.motDePasse || req.body.password;
 
-  const utilisateur = await Utilisateur.findOne({ nomUtilisateur });
-  if (!utilisateur) return res.status(400).json({ error: "Utilisateur non trouvé" });
+  if (!nomUtilisateur || !motDePasse) {
+    return res.status(400).json({
+      error: "Nom d'utilisateur et mot de passe requis"
+    });
+  }
 
-  const valide = await bcrypt.compare(motDePasse, utilisateur.motDePasse);
-  if (!valide) return res.status(400).json({ error: "Mot de passe incorrect" });
+  try {
+    const utilisateur = await Utilisateur.findOne({
+      nomUtilisateur: nomUtilisateur
+    });
 
-  const jeton = jwt.sign({ idUtilisateur: utilisateur._id }, CLE_SECRETE);
+    if (!utilisateur) {
+      return res.status(400).json({
+        error: "Utilisateur non trouvé"
+      });
+    }
 
-  res.json({ token: jeton });
+    const motDePasseValide = await chiffrement.compare(
+      motDePasse,
+      utilisateur.motDePasse
+    );
+
+    if (!motDePasseValide) {
+      return res.status(400).json({
+        error: "Mot de passe incorrect"
+      });
+    }
+
+    const jeton = jetonWeb.sign(
+      {
+        idUtilisateur: utilisateur._id
+      },
+      cleSecrete
+    );
+
+    res.json({
+      token: jeton
+    });
+  } catch (erreur) {
+    res.status(500).json({
+      error: erreur.message
+    });
+  }
 });
 
-function verifyToken(req, res, next) {
-  const auth = req.headers.authorization;
-  if (!auth) return res.status(401).send("Aucun jeton");
-
+application.get("/api/conversations", verifierJeton, async (req, res) => {
   try {
-    const decode = jwt.verify(auth.split(" ")[1], CLE_SECRETE);
-    req.idUtilisateur = decode.idUtilisateur;
-    next();
-  } catch {
-    res.status(401).send("Jeton invalide");
-  }
-}
-
-app.get('/api/conversations', verifyToken, async (req, res) => {
-  try {
-    const conversations = await Conversation.find({ idUtilisateur: req.idUtilisateur })
-      .sort({ misAJourLe: -1 });
+    const conversations = await Conversation.find({
+      idUtilisateur: req.idUtilisateur
+    }).sort({
+      misAJourLe: -1
+    });
 
     res.json(conversations);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (erreur) {
+    res.status(500).json({
+      error: erreur.message
+    });
   }
 });
 
-app.post('/api/conversations', verifyToken, async (req, res) => {
+application.post("/api/conversations", verifierJeton, async (req, res) => {
   try {
-    const { titre } = req.body;
+    const titre = req.body.titre || "Nouveau Chat";
 
     const conversation = await Conversation.create({
       idUtilisateur: req.idUtilisateur,
-      titre: titre || "Nouveau Chat",
+      titre: titre,
       misAJourLe: new Date()
     });
 
     res.json(conversation);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (erreur) {
+    res.status(500).json({
+      error: erreur.message
+    });
   }
 });
 
-app.patch('/api/conversations/:id', verifyToken, async (req, res) => {
+application.patch("/api/conversations/:id", verifierJeton, async (req, res) => {
   try {
-    const { titre } = req.body;
+    const titre = req.body.titre || "Sans titre";
 
     const conversation = await Conversation.findOneAndUpdate(
-      { _id: req.params.id, idUtilisateur: req.idUtilisateur },
-      { titre, misAJourLe: new Date() },
-      { new: true }
+      {
+        _id: req.params.id,
+        idUtilisateur: req.idUtilisateur
+      },
+      {
+        titre: titre,
+        misAJourLe: new Date()
+      },
+      {
+        new: true
+      }
     );
 
     res.json(conversation);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (erreur) {
+    res.status(500).json({
+      error: erreur.message
+    });
   }
 });
 
-app.delete('/api/conversations/:id', verifyToken, async (req, res) => {
+application.delete("/api/conversations/:id", verifierJeton, async (req, res) => {
   try {
     await Conversation.deleteOne({
       _id: req.params.id,
       idUtilisateur: req.idUtilisateur
     });
-await Message.deleteMany({
-  idConversation: req.params.id,
-  idUtilisateur: req.idUtilisateur
-});
-    res.json({ message: "Conversation supprimée" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+
+    await Message.deleteMany({
+      idConversation: req.params.id,
+      idUtilisateur: req.idUtilisateur
+    });
+
+    res.json({
+      message: "Conversation supprimée"
+    });
+  } catch (erreur) {
+    res.status(500).json({
+      error: erreur.message
+    });
   }
 });
 
-app.post('/api/generate', verifyToken, async (req, res) => {
-  const { prompt, conversationId } = req.body;
-  const userId = req.userId;
+application.get("/api/messages/:idConversation", verifierJeton, async (req, res) => {
+  try {
+    const messages = await Message.find({
+      idUtilisateur: req.idUtilisateur,
+      idConversation: req.params.idConversation
+    }).sort({
+      creeLe: 1
+    });
+
+    res.json(messages);
+  } catch (erreur) {
+    res.status(500).json({
+      error: erreur.message
+    });
+  }
+});
+
+application.post("/api/generer", verifierJeton, async (req, res) => {
+  const invite = req.body.invite || req.body.prompt;
+  const idConversation = req.body.idConversation || req.body.conversationId;
+
+  if (!invite || !idConversation) {
+    return res.status(400).json({
+      response: "Question ou conversation manquante."
+    });
+  }
 
   console.log("Question reçue :", invite);
   console.log("idConversation reçu :", idConversation);
 
   try {
     const reponses = await Promise.all(
-      MODELES.map(modele => demanderModele(modele, invite))
+      modelesIA.map((modele) => demanderModele(modele, invite))
     );
 
-const comparaisonBrute = await comparerReponses(invite, reponses);
+    const comparaisonBrute = await comparerReponses(invite, reponses);
 
-let meilleur;
-try {
-  meilleur = JSON.parse(comparaisonBrute);
-} catch {
-  console.log("Erreur parsing JSON:", comparaisonBrute);
-  meilleur = {
-    meilleurModele: reponses[0].model,
-    meilleureReponse: reponses[0].answer
-  };
-}
+    let meilleureSelection;
 
-const contenu = `
-Meilleure réponse (${meilleur.meilleurModele}):
+    try {
+      meilleureSelection = JSON.parse(comparaisonBrute);
+    } catch (erreur) {
+      console.log("Erreur parsing JSON :", comparaisonBrute);
 
-${meilleur.meilleureReponse}
-`;
+      meilleureSelection = {
+        meilleurModele: reponses[0].modele,
+        meilleureReponse: reponses[0].reponse
+      };
+    }
+
+    const contenu = `Meilleure réponse (${meilleureSelection.meilleurModele}):
+
+${meilleureSelection.meilleureReponse}`;
 
     await Message.create({
-      idUtilisateur,
-      idConversation,
-      invite,
+      idUtilisateur: req.idUtilisateur,
+      idConversation: idConversation,
+      invite: invite,
       reponse: contenu
     });
 
-    res.json({ response: contenu });
+    await Conversation.findOneAndUpdate(
+      {
+        _id: idConversation,
+        idUtilisateur: req.idUtilisateur
+      },
+      {
+        misAJourLe: new Date()
+      }
+    );
 
-  } catch (error) {
-    console.error("Erreur serveur :", error);
+    res.json({
+      response: contenu
+    });
+  } catch (erreur) {
+    console.error("Erreur serveur :", erreur);
+
     res.status(500).json({
-      response: `Erreur serveur: ${error.message}`
+      response: `Erreur serveur: ${erreur.message}`
     });
   }
 });
 
-app.get('/api/messages/:conversationId', verifyToken, async (req, res) => {
-  try {
-    const messages = await Message.find({
-      idUtilisateur: req.idUtilisateur,
-      idConversation: req.params.idConversation
-    }).sort({ creeLe: 1 });
+/*
+  Routes alternatives pour garder la compatibilité
+  si certains fichiers frontend utilisent encore les noms anglais.
+*/
 
-    res.json(messages);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+application.post("/api/register", async (req, res) => {
+  req.url = "/api/inscription";
+  application._router.handle(req, res);
 });
 
-/**
- * Démarrage du serveur Express.
- *
- * Le serveur écoute sur le port 3000.
- */
-
-const server = app.listen(3000, () => {
-  console.log("Serveur en cours d'exécution sur le port 3000");
+application.post("/api/login", async (req, res) => {
+  req.url = "/api/connexion";
+  application._router.handle(req, res);
 });
 
-/**
- * Affiche un message heartbeat régulièrement
- * afin de confirmer que le serveur fonctionne.
- */
+application.post("/api/generate", verifierJeton, async (req, res) => {
+  req.url = "/api/generer";
+  application._router.handle(req, res);
+});
 
-setInterval(() => {
-  console.log("heartbeat");
-}, 10000);
+application.listen(port, () => {
+  console.log(`Serveur en cours d'exécution sur le port ${port}`);
+});
